@@ -12,7 +12,7 @@ Context Doctor is a small FastAPI demo for inspecting text-to-SQL rule context. 
 ## Requirements
 
 - Python 3.12 or newer.
-- Poetry for local development, or Docker for containerized use.
+- uv for local development, or Docker for containerized use.
 - An OpenAI-compatible endpoint that supports structured `responses.parse` calls.
 
 ## Quickstart
@@ -21,11 +21,11 @@ The app accepts schema JSON and rules text uploads for every analysis request. S
 
 ```sh
 cd src
-poetry install
+uv sync
 BASE_URL= \
 OPENAI_TOKEN= \
 OPENAI_MODEL= \
-poetry run uvicorn context_doctor.fastapi_app:app --host localhost --port 8008
+uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008
 ```
 
 Open <http://localhost:8008/>.
@@ -38,6 +38,12 @@ Use these sample uploads in the UI:
 Use `PostgreSQL` as the sample SQL dialect.
 
 LLM-backed workflows require `BASE_URL`, `OPENAI_TOKEN`, and `OPENAI_MODEL`.
+
+For the reload-enabled development server, run this from `src/`:
+
+```sh
+../start.sh
+```
 
 ## Environment
 

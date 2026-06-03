@@ -2,19 +2,19 @@
 
 ## Repo Shape
 
-- Python package, `pyproject.toml`, `poetry.lock`, `README.md`, templates, prompts, and examples live under `src/`; run Poetry/Uvicorn commands from `src/` unless noted.
+- Python package, `pyproject.toml`, `uv.lock`, `README.md`, templates, prompts, and examples live under `src/`; run uv/Uvicorn commands from `src/` unless noted.
 - FastAPI entrypoint is `context_doctor.fastapi_app:app`.
 - Templates, prompts, guidelines, and examples are loaded package-relatively with `importlib.resources`.
 - `src/.venv/` may exist in the repo checkout; do not inspect or edit it as project source.
 
 ## Commands
 
-- Install dependencies: from `src/`, run `poetry install`.
-- Dev server: from `src/`, run `../start.sh`; it starts Uvicorn on `localhost:8008` with reload for Python, prompt YAML, and templates.
-- Direct local server: from `src/`, run `poetry run uvicorn context_doctor.fastapi_app:app --host localhost --port 8008`.
-- Production-style local server: from `src/`, run `poetry run uvicorn context_doctor.fastapi_app:app --host 0.0.0.0 --port 8000`.
+- Install dependencies: from `src/`, run `uv sync`.
+- Dev server: from `src/`, run `../start.sh`; it starts Uvicorn on `localhost:8008` with reload for Python, prompt YAML, and templates. Override with `HOST` or `PORT` if needed.
+- Direct local server: from `src/`, run `uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008`.
+- Production-style local server: from `src/`, run `uv run python -m uvicorn context_doctor.fastapi_app:app --host 0.0.0.0 --port 8000`.
 - Docker build from repo root: `docker build -t context-doctor .`; the Dockerfile copies `src/pyproject.toml`, `src/README.md`, and `src/context_doctor`, then runs `pip install .`.
-- Lint from repo root: `ruff check --config ~/.local/ruff/pyproject.toml src`. Format with `ruff format --config ~/.local/ruff/pyproject.toml src`.
+- Lint from `src/`: `uv run ruff check .`. Format with `uv run ruff format .`.
 - No automated test suite is configured. Use `TEST_PLAN.md` plus manual checks for `/`, `/history`, all four flows, async polling, cancellation, and partial results.
 
 ## Runtime Requirements

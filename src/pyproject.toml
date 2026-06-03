@@ -2,9 +2,7 @@
 name = "context-doctor"
 version = "0.1.0"
 description = ""
-authors = [
-    { name = "Context Doctor Demo Maintainers" },
-]
+authors = [{ name = "Ilya Azerkovich" }]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -20,18 +18,19 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.11.17,<0.12.0"]
+build-backend = "uv_build"
 
-[tool.poetry]
-# Make the local package installable by poetry. Point the package discovery to
-# the `context_doctor` package directory so `import context_doctor` works after
-# `poetry install`.
-packages = [{ include = "context_doctor" }]
+[tool.uv]
+
+[tool.uv.build-backend]
+module-name = ["context_doctor"]
+module-root = ""
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
     "pytest-fastapi>=0.1.0",
     "ruff>=0.15.15",
+    "watchfiles>=1.2.0",
 ]
