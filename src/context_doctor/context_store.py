@@ -64,7 +64,7 @@ class ContextStore:
             raise ValueError(f"Schema file is not valid JSON: {exc.msg}") from exc
 
         if not isinstance(schema, dict):
-            raise ValueError("Schema JSON must be an object")
+            raise TypeError("Schema JSON must be an object")
 
         try:
             rules_text = rules_content.decode("utf-8").strip()

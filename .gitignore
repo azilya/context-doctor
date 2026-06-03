@@ -27,3 +27,6 @@ context_doctor_history.db*
 *.sql
 *.csv
 *.jsonl
+
+.idea
+.vscode

@@ -15,7 +15,7 @@ def _int_env(name: str, default: int) -> int:
 
 
 BASE_URL = os.getenv("BASE_URL", "")
-OPENAI_TOKEN = os.getenv("OPENAI_TOKEN", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "")
 
 MAX_CONCURRENT_RULE_ANALYSES = _int_env("MAX_CONCURRENT_RULE_ANALYSES", 1)

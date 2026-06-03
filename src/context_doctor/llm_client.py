@@ -9,12 +9,12 @@ from . import settings
 
 @lru_cache(maxsize=1)
 def get_openai_client() -> OpenAI:
-    if not settings.OPENAI_TOKEN:
-        raise ValueError("OPENAI_TOKEN is required for LLM analysis")
+    if not settings.OPENAI_API_KEY:
+        raise ValueError("OPENAI_API_KEY is required for LLM analysis")
     if not settings.OPENAI_MODEL:
         raise ValueError("OPENAI_MODEL is required for LLM analysis")
 
-    kwargs = {"api_key": settings.OPENAI_TOKEN}
+    kwargs = {"api_key": settings.OPENAI_API_KEY}
     if settings.BASE_URL:
         kwargs["base_url"] = settings.BASE_URL
     return OpenAI(**kwargs)

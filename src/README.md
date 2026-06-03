@@ -11,4 +11,4 @@ uv sync
 uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008
 ```
 
-Set `BASE_URL`, `OPENAI_TOKEN`, and `OPENAI_MODEL` before running LLM-backed workflows. Upload schema JSON, rules text, and SQL dialect in the UI for each request.
+Set `BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL` before running LLM-backed workflows. Upload schema JSON, rules text, and SQL dialect in the UI for each request.

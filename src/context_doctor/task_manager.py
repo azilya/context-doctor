@@ -170,9 +170,9 @@ class TaskManager:
                         state = self._tasks.get(task_id)
                         if state and state.results:
                             ordered_results = sorted(state.results.items())
-                            partial_html = "".join(
-                                [html for _, html in ordered_results if html]
-                            )
+                            partial_html = "".join([
+                                html for _, html in ordered_results if html
+                            ])
                             logging.info(
                                 f"Collected {len(state.results)} partial results for cancelled task {task_id}"
                             )
@@ -203,9 +203,9 @@ class TaskManager:
                         state = self._tasks.get(task_id)
                         if state:
                             ordered_results = sorted(state.results.items())
-                            all_html = "".join(
-                                [html for _, html in ordered_results if html]
-                            )
+                            all_html = "".join([
+                                html for _, html in ordered_results if html
+                            ])
                         else:
                             all_html = ""
 
@@ -227,9 +227,9 @@ class TaskManager:
                     state = self._tasks.get(task_id)
                     if state and state.results:
                         ordered_results = sorted(state.results.items())
-                        partial_html = "".join(
-                            [html for _, html in ordered_results if html]
-                        )
+                        partial_html = "".join([
+                            html for _, html in ordered_results if html
+                        ])
                         logging.info(
                             f"Collected {len(state.results)} partial results for failed task {task_id}"
                         )
@@ -301,7 +301,7 @@ class TaskManager:
     @staticmethod
     def _is_empty_result(df) -> bool:
         return all(
-            df.set_index("Category").loc[c, "Details"] == ""
+            not df.set_index("Category").loc[c, "Details"]
             for c in [
                 "typos",
                 "dialect_inconsistencies",

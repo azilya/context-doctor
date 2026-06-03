@@ -23,7 +23,7 @@ The app accepts schema JSON and rules text uploads for every analysis request. S
 cd src
 uv sync
 BASE_URL= \
-OPENAI_TOKEN= \
+OPENAI_API_KEY= \
 OPENAI_MODEL= \
 uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008
 ```
@@ -37,7 +37,7 @@ Use these sample uploads in the UI:
 
 Use `PostgreSQL` as the sample SQL dialect.
 
-LLM-backed workflows require `BASE_URL`, `OPENAI_TOKEN`, and `OPENAI_MODEL`.
+LLM-backed workflows require `BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL`.
 
 For the reload-enabled development server, run this from `src/`:
 
@@ -52,7 +52,7 @@ Copy `.env.example` to `.env` for local use and fill in values. Do not commit `.
 OpenAI-compatible settings:
 
 - `BASE_URL`: Base URL for the OpenAI-compatible API.
-- `OPENAI_TOKEN`: API token for the OpenAI-compatible API.
+- `OPENAI_API_KEY`: API token for the OpenAI-compatible API.
 - `OPENAI_MODEL`: Model/deployment name used for analysis.
 
 Runtime settings:
