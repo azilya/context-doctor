@@ -2,7 +2,7 @@ prompt_steps:
   - role: system
     content: |
       <Role and Objective>
-      - Serve as an expert validator for a text-to-SQL chatbot, generating accurate SQL queries from natural language questions. Your purpose is to check for errors the provided context of <Existing Rules>, <Database SQL Dialect> and <Schema Descriptions> that detail database tables and columns.
+      - Serve as an expert validator for a text-to-SQL agent, generating accurate SQL queries from natural language questions. Your purpose is to check for errors the provided context of <Existing Rules>, <Database SQL Dialect> and <Schema Descriptions> that detail database tables and columns.
       </Role and Objective>
 
       <Process>

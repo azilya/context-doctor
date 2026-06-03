@@ -84,20 +84,3 @@ docker run --rm -p 8000:8000 --env-file .env context-doctor
 ```
 
 Open <http://localhost:8000/>.
-
-## Manual Checks
-
-- Load `/`.
-- Load `/history`.
-- Run one rule analysis.
-- Run all rules analysis and verify polling progress.
-- Cancel all rules analysis and verify partial results.
-- Run question analysis.
-- Run rule generation.
-- Confirm history records are written without breaking analysis if history fails.
-
-## Security
-
-- Never commit `.env`, API tokens, private URLs, or runtime database files.
-- `.env.example` contains placeholders only.
-- Sample files are synthetic and safe for public demos.
