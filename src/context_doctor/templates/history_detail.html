@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History Entry #{{ entry.id }} - Context Doctor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #374151;
+            --primary-hover: #4b5563;
+            --secondary-color: #6b7280;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background-color: #ffffff;
+            --card-background: #f9f9f9;
+            --text-color: #111827;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--primary-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            color: white;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            text-shadow: 0 4px 8px rgba(--0, 0, 0, 0.3);
+        }
+
+        .nav-links {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .metadata-item {
+            padding: 1rem;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        .metadata-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .metadata-value {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-cancelled {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: var(--card-background);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .collapsible i {
+            transition: transform 0.3s;
+        }
+
+        .collapsible.active i {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.active {
+            max-height: 2000px;
+        }
+
+        .code-block {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-top: 0.5rem;
+        }
+
+        .result-container {
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: auto;
+            max-height: 600px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-muted);
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+
+        .error-box {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 0.5rem;
+        }
+
+        .empty-value {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Query History Entry #{{ entry.id }}</h1>
+            <nav class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/history"><i class="fas fa-history"></i> History</a>
+            </nav>
+        </header>
+
+        <div class="action-bar">
+            <a href="/history" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+            <button onclick="deleteEntry()" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete Entry
+            </button>
+        </div>
+
+        <!-- Metadata Section -->
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-info-circle"></i>
+                Execution Information
+            </div>
+            <div class="metadata-grid">
+                <div class="metadata-item">
+                    <div class="metadata-label">Flow Type</div>
+                    <div class="metadata-value">{{ entry.flow_type.replace('_', ' ').title() }}</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Status</div>
+                    <div class="metadata-value">
+                        <span class="status-badge status-{{ entry.status }}">{{ entry.status }}</span>
+                    </div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-label">Created At</div>
+                    <div class="metadata-value">{{ entry.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                </div>
+                {% if entry.duration_seconds %}
+                <div class="metadata-item">
+                    <div class="metadata-label">Duration</div>
+                    <div class="metadata-value">{{ "%.2f"|format(entry.duration_seconds) }} seconds</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Progress Section (for async flows) -->
+        {% if entry.execution_mode == 'async' and entry.total_rules %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-tasks"></i>
+                Progress
+            </div>
+            <div class="progress-bar">
+                {% set progress = (entry.completed_rules / entry.total_rules * 100) if entry.total_rules > 0 else 0 %}
+                <div class="progress-fill" style="width: {{ progress }}%;">
+                    {{ entry.completed_rules }} / {{ entry.total_rules }} ({{ "%.0f"|format(progress) }}%)
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Input Parameters Section -->
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-keyboard"></i>
+                Input Parameters
+            </div>
+            <div class="metadata-grid">
+                {% if input_params.new_rule %}
+                <div class="metadata-item" style="grid-column: 1 / -1;">
+                    <div class="metadata-label">New Rule</div>
+                    <div class="metadata-value" style="white-space: pre-wrap;">{{ input_params.new_rule }}</div>
+                </div>
+                {% endif %}
+                {% if input_params.question %}
+                <div class="metadata-item" style="grid-column: 1 / -1;">
+                    <div class="metadata-label">Question</div>
+                    <div class="metadata-value">{{ input_params.question }}</div>
+                </div>
+                {% endif %}
+                {% if input_params.problem %}
+                <div class="metadata-item" style="grid-column: 1 / -1;">
+                    <div class="metadata-label">Problem Description</div>
+                    <div class="metadata-value" style="white-space: pre-wrap;">{{ input_params.problem }}</div>
+                </div>
+                {% endif %}
+                {% if not input_params.new_rule and not input_params.question and not input_params.problem %}
+                <div class="empty-value">No input parameters recorded</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Error Section (if failed) -->
+        {% if entry.error_message %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                Error
+            </div>
+            <div class="error-box">
+                {{ entry.error_message }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Results Section -->
+        {% if entry.result_html %}
+        <div class="section">
+            <div class="section-title">
+                <i class="fas fa-file-alt"></i>
+                {% if entry.status in ['failed', 'cancelled'] and entry.flow_type == 'all_rules_analysis' %}
+                    Partial Analysis Results ({{ entry.completed_rules }} of {{ entry.total_rules }} rules)
+                {% else %}
+                    Analysis Results
+                {% endif %}
+            </div>
+            <div class="result-container">
+                {{ entry.result_html | safe }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Context Data Sections (Collapsible) -->
+        {% if entry.rules_text %}
+        <div class="section">
+            <div class="section-title collapsible" onclick="toggleCollapsible(this)">
+                <i class="fas fa-chevron-right"></i>
+                Rules Used
+            </div>
+            <div class="collapsible-content">
+                <pre class="code-block">{{ entry.rules_text }}</pre>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if entry.schema_json %}
+        <div class="section">
+            <div class="section-title collapsible" onclick="toggleCollapsible(this)">
+                <i class="fas fa-chevron-right"></i>
+                Schema Description
+            </div>
+            <div class="collapsible-content">
+                <pre class="code-block">{{ entry.schema_json }}</pre>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if entry.guidelines_text %}
+        <div class="section">
+            <div class="section-title collapsible" onclick="toggleCollapsible(this)">
+                <i class="fas fa-chevron-right"></i>
+                Guidelines
+            </div>
+            <div class="collapsible-content">
+                <pre class="code-block">{{ entry.guidelines_text }}</pre>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Additional Metadata -->
+        {% if entry.client_backend_url or entry.user_agent or entry.ip_address %}
+        <div class="section">
+            <div class="section-title collapsible" onclick="toggleCollapsible(this)">
+                <i class="fas fa-chevron-right"></i>
+                Technical Metadata
+            </div>
+            <div class="collapsible-content">
+                <div class="metadata-grid">
+                    {% if entry.client_backend_url %}
+                    <div class="metadata-item" style="grid-column: 1 / -1;">
+                        <div class="metadata-label">Backend URL</div>
+                        <div class="metadata-value">{{ entry.client_backend_url }}</div>
+                    </div>
+                    {% endif %}
+                    {% if entry.user_agent %}
+                    <div class="metadata-item" style="grid-column: 1 / -1;">
+                        <div class="metadata-label">User Agent</div>
+                        <div class="metadata-value" style="font-size: 0.75rem; word-break: break-all;">{{ entry.user_agent }}</div>
+                    </div>
+                    {% endif %}
+                    {% if entry.ip_address %}
+                    <div class="metadata-item">
+                        <div class="metadata-label">IP Address</div>
+                        <div class="metadata-value">{{ entry.ip_address }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleCollapsible(element) {
+            element.classList.toggle('active');
+            const content = element.nextElementSibling;
+            content.classList.toggle('active');
+        }
+
+        async function deleteEntry() {
+            if (!confirm('Are you sure you want to delete this history entry? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/history/{{ entry.id }}', {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Entry deleted successfully');
+                    window.location.href = '/history';
+                } else {
+                    const error = await response.json();
+                    alert('Failed to delete entry: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to delete entry: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

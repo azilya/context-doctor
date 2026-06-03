@@ -1,0 +1,17 @@
+# TODOs
+
+* context caching architecture:
+  * Current baseline: require schema JSON, rules text, and SQL dialect uploads on every analysis request.
+  * Keep `ContextStore` as the boundary for context ingestion, validation, normalization, and future persistence.
+  * Add a `context_id` once caching is introduced; generated after upload and returned to the UI.
+  * Store cached context as raw schema JSON, normalized schema description, rules text, SQL dialect, source filenames, creation time, and last-used time.
+  * Persist `context_id` in history so completed runs can be traced back to the context snapshot used.
+  * Add update semantics: uploading new schema/rules can either create a new context or replace an existing context explicitly.
+  * Add deletion/expiry policy to avoid unbounded in-memory or database growth.
+  * UI future state: choose between "Upload new context" and "Reuse cached context".
+  * Keep async task execution using an immutable `AnalysisContext` snapshot so cached context updates do not affect in-flight runs.
+* tools:
+  * SQL dialect documentation to check validity
+* refactor the code
+  * switch to OpenAPI: routers, /api endpoints etc.
+  * folder for flows

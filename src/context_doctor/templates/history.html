@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query History - Context Doctor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #374151;
+            --primary-hover: #4b5563;
+            --secondary-color: #6b7280;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --background-color: #ffffff;
+            --card-background: #f9f9f9;
+            --text-color: #111827;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--primary-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            color: white;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-links {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .filter-bar {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+
+        .filter-bar button {
+            padding: 0.5rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .filter-bar button:hover {
+            background: var(--primary-hover);
+        }
+
+        .history-table {
+            width: 100%;
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .history-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .history-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover {
+            background: var(--card-background);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-cancelled {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .flow-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--card-background);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-view {
+            background: var(--primary-color);
+            color: white;
+            margin-right: 0.5rem;
+        }
+
+        .btn-view:hover {
+            background: var(--primary-hover);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1rem;
+        }
+
+        .pagination a,
+        .pagination button {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .pagination a:hover,
+        .pagination button:hover {
+            background: var(--primary-hover);
+        }
+
+        .pagination a.disabled {
+            background: var(--secondary-color);
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            border: 1px solid #fecaca;
+        }
+
+        .input-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="title-section">
+                <i class="fas fa-user-md"></i>
+                <h1>Query History</h1>
+            </div>
+            <nav class="nav-links">
+                <a href="/"><i class="fas fa-home"></i> Home</a>
+                <a href="/history"><i class="fas fa-history"></i> History</a>
+            </nav>
+        </header>
+
+        {% if error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Statistics Panel -->
+        {% if stats %}
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-label">Total Queries</div>
+                <div class="stat-value">{{ stats.total_queries }}</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Last 7 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Duration</div>
+                <div class="stat-value">{{ "%.1f"|format(stats.average_duration_seconds) }}s</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">{{ stats.by_status.get('completed', 0) }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Failed</div>
+                <div class="stat-value" style="color: var(--error-color);">{{ stats.by_status.get('failed', 0) }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <form method="get" action="/history" style="display: contents;">
+                <select name="flow" onchange="this.form.submit()">
+                    <option value="">All Flow Types</option>
+                    <option value="rule_analysis" {% if filters.flow == 'rule_analysis' %}selected{% endif %}>Rule Analysis</option>
+                    <option value="question_analysis" {% if filters.flow == 'question_analysis' %}selected{% endif %}>Question Analysis</option>
+                    <option value="rule_generation" {% if filters.flow == 'rule_generation' %}selected{% endif %}>Rule Generation</option>
+                    <option value="all_rules_analysis" {% if filters.flow == 'all_rules_analysis' %}selected{% endif %}>All Rules Analysis</option>
+                </select>
+
+                <select name="status" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="failed" {% if filters.status == 'failed' %}selected{% endif %}>Failed</option>
+                    <option value="running" {% if filters.status == 'running' %}selected{% endif %}>Running</option>
+                    <option value="cancelled" {% if filters.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+
+                <input type="text" name="search" placeholder="Search..." value="{{ filters.search or '' }}">
+                <button type="submit"><i class="fas fa-search"></i> Filter</button>
+                {% if filters.flow or filters.status or filters.search %}
+                <a href="/history" class="btn" style="background: var(--secondary-color);">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- History Table -->
+        {% if entries %}
+        <div class="history-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date/Time</th>
+                        <th>Flow Type</th>
+                        <th>Input Preview</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td><strong>#{{ entry.id }}</strong></td>
+                        <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td><span class="flow-badge">{{ entry.flow_type.replace('_', ' ').title() }}</span></td>
+                        <td class="input-preview">
+                            {% set params = entry.input_params | fromjson %}
+                            {% if params.new_rule %}
+                                Rule: {{ params.new_rule[:50] }}...
+                            {% elif params.question %}
+                                Q: {{ params.question[:50] }}...
+                            {% elif params.problem %}
+                                Problem: {{ params.problem[:50] }}...
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.duration_seconds %}
+                                {{ "%.1f"|format(entry.duration_seconds) }}s
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ entry.status }}">
+                                {{ entry.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="/history/{{ entry.id }}" class="btn btn-view">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if filters.flow %}&flow={{ filters.flow }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+            {% else %}
+            <a class="disabled"><i class="fas fa-chevron-left"></i> Previous</a>
+            {% endif %}
+
+            <span>Page {{ page }} of {{ total_pages }}</span>
+
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if filters.flow %}&flow={{ filters.flow }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+            {% else %}
+            <a class="disabled">Next <i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h2>No History Found</h2>
+            <p>No query history entries match your filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>

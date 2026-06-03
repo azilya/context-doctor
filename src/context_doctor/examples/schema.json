@@ -1,0 +1,58 @@
+{
+  "description": "Demo sales analytics context for validating text-to-SQL rules.",
+  "tables": [
+    {
+      "originalName": "customers",
+      "description": "Customer dimension table with account and region attributes.",
+      "columns": [
+        {
+          "originalName": "customer_id",
+          "description": "Unique customer identifier.",
+          "type": "integer"
+        },
+        {
+          "originalName": "customer_name",
+          "description": "Customer display name.",
+          "type": "text"
+        },
+        {
+          "originalName": "region",
+          "description": "Customer sales region.",
+          "type": "text"
+        }
+      ],
+      "relations": {}
+    },
+    {
+      "originalName": "orders",
+      "description": "Fact table containing customer orders and revenue.",
+      "columns": [
+        {
+          "originalName": "order_id",
+          "description": "Unique order identifier.",
+          "type": "integer"
+        },
+        {
+          "originalName": "customer_id",
+          "description": "Customer identifier linked to customers.customer_id.",
+          "type": "integer"
+        },
+        {
+          "originalName": "order_date",
+          "description": "Date when the order was placed.",
+          "type": "date"
+        },
+        {
+          "originalName": "revenue",
+          "description": "Order revenue in USD.",
+          "type": "numeric"
+        }
+      ],
+      "relations": {
+        "customer_id": [
+          "customer_id -> customers.customer_id"
+        ]
+      }
+    }
+  ]
+}

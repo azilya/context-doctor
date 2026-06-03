@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+src/.venv/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime history databases
+*.db
+*.sqlite
+*.sqlite3
+context_doctor_history.db*
+
+# Logs and local artifacts
+*.log
+*.dump
+*.sql
+*.csv
+*.jsonl

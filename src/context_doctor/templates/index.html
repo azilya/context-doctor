@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Context Doctor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #374151;
+            --primary-hover: #4b5563;
+            --secondary-color: #6b7280;
+            --secondary-hover: #9ca3af;
+            --success-color: #374151;
+            --error-color: #dc2626;
+            --background-color: #ffffff;
+            --card-background: #f9f9f9;
+            --text-color: #111827;
+            --text-muted: #6b7280;
+            --border-color: #d1d5db;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: var(--primary-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            color: white;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.025em;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .doctor-icon {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            /* animation: pulse 2s infinite; */
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-section {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .form-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        select,
+        input,
+        textarea {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--card-background);
+            color: var(--text-color);
+        }
+
+        select:focus,
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            resize: both;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button[type="submit"] {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        button[type="submit"]:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button[type="button"] {
+            background: var(--secondary-color);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        button[type="button"]:hover {
+            background: var(--secondary-hover);
+            transform: translateY(-1px);
+        }
+
+        #stopLoadingBtn {
+            background: var(--error-color);
+            color: white;
+        }
+
+        #stopLoadingBtn:hover {
+            background: #b91c1c;
+        }
+
+        .clear-btn {
+            background: var(--error-color) !important;
+            color: white !important;
+        }
+
+        .clear-btn:hover {
+            background: #b91c1c !important;
+        }
+
+        #problem_field {
+            width: 100%;
+        }
+
+        #problem_field label,
+        #new_rule_field label {
+            text-align: left;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        #problem_field textarea,
+        #new_rule_field textarea {
+            width: 100%;
+            min-height: 120px;
+        }
+
+        #question_field input {
+            width: 100%;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        details {
+            background: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        summary {
+            padding: 1rem;
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+
+        summary:hover {
+            background: var(--primary-hover);
+        }
+
+        summary::marker {
+            display: none;
+        }
+
+        summary::after {
+            content: '▼';
+            transition: transform 0.2s;
+        }
+
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+
+        pre {
+            padding: 1rem;
+            margin: 0;
+            background: #f0f0f0;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .result {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .result:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .result h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result h2::before {
+            content: '📊';
+        }
+
+        .result pre {
+            background: #f0f0f0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            border-top: 6px solid var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-content {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #loadingProgress {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .pager {
+            margin-top: 1.5rem;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .pager button {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .pager button:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+
+        .pager button:disabled {
+            background: var(--secondary-color);
+            cursor: not-allowed;
+        }
+
+        .pager input {
+            padding: 0.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            width: 80px;
+        }
+
+        .page-indicator {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .rule-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+    <body>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <div id="loadingProgress"></div>
+                <button type="button" id="stopLoadingBtn" onclick="stopTask()">Stop</button>
+            </div>
+        </div>
+        <div class="container">
+            <header>
+                <div class="title-section">
+                    <i class="fas fa-user-md doctor-icon"></i>
+                    <h1>Context Doctor</h1>
+                </div>
+                <nav style="margin-top: 1rem; display: flex; gap: 1.5rem; justify-content: center;">
+                    <a href="/" style="color: white; text-decoration: none; font-weight: 500; transition: opacity 0.3s;">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                    <a href="/history" style="color: white; text-decoration: none; font-weight: 500; transition: opacity 0.3s;">
+                        <i class="fas fa-history"></i> History
+                    </a>
+                </nav>
+            </header>
+
+            <div class="main-content">
+                <div class="form-section">
+                    <form action="/run" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="form-group">
+                            <label for="flow">Flow:</label>
+                            <select id="flow" name="flow" onchange="toggleFields()">
+                                <option value="rule_analysis" {% if selected_flow == 'rule_analysis' %} selected {% endif %}>One Rule Analysis</option>
+                                <option value="all_rules_analysis" {% if selected_flow == 'all_rules_analysis' %} selected {% endif %}>All Rules Analysis</option>
+                                <option value="question_analysis" {% if selected_flow == 'question_analysis' %} selected {% endif %}>Question Analysis</option>
+                                <option value="rule_generation" {% if selected_flow == 'rule_generation' %} selected {% endif %}>Rule Generation</option>
+                            </select>
+                        </div>
+
+                        <div id="context_fields">
+                            <div class="form-group">
+                                <label for="schema_file">Schema JSON:</label>
+                                <input type="file" id="schema_file" name="schema_file" accept="application/json,.json" required>
+                                {% if form_values and form_values.schema_filename %}
+                                <small>Last uploaded: {{ form_values.schema_filename }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="rules_file">Rules text:</label>
+                                <input type="file" id="rules_file" name="rules_file" accept="text/plain,text/markdown,.txt,.md" required>
+                                {% if form_values and form_values.rules_filename %}
+                                <small>Last uploaded: {{ form_values.rules_filename }}</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sql_dialect">SQL Dialect:</label>
+                                <input type="text" id="sql_dialect" name="sql_dialect" value="{% if form_values and form_values.sql_dialect %}{{ form_values.sql_dialect }}{% else %}PostgreSQL{% endif %}" required>
+                            </div>
+                        </div>
+
+                        <div id="new_rule_field" class="form-group">
+                            <label for="new_rule">New Rule:</label>
+                            <textarea id="new_rule" name="new_rule" rows="4">{% if form_values %}{{ form_values.new_rule }}{% endif %}</textarea>
+                        </div>
+
+                        <div id="problem_field" class="form-group" style="display: none;">
+                            <label for="problem">Problem description:</label>
+                            <textarea id="problem" name="problem" rows="4">{% if form_values %}{{ form_values.problem }}{% endif %}</textarea>
+                        </div>
+
+                        <div id="question_field" class="form-group" style="display: none;">
+                            <label for="question">Question:</label>
+                            <input type="text" id="question" name="question" value="{% if form_values %} {{ form_values.question }} {% endif %}">
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit">Run Analysis</button>
+                            <button type="button" class="clear-btn" onclick="clearAndRedirect()">Clear</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="sidebar">
+                    <details id="rules_details">
+                        <summary>
+                            <strong>Rules</strong>
+                            <button type="button" onclick="copyBlock('rules_details', this)">Copy</button>
+                        </summary>
+                        <pre id="rules_pre">{% if rules_text %}{{ rules_text }}{% else %}{% endif %}</pre>
+                    </details>
+
+                    <details id="schema_details">
+                        <summary>
+                            <strong>Schema Description</strong>
+                            <button type="button" onclick="copyBlock('schema_details', this)">Copy</button>
+                        </summary>
+                        <pre id="schema_pre">{% if schema_json %}{{ schema_json }}{% else %}{% endif %}</pre>
+                    </details>
+
+                    {% if selected_flow == 'rule_analysis' or selected_flow == 'all_rules_analysis' or selected_flow == 'rule_generation' %}
+                    <details id="guidelines_details">
+                        <summary>
+                            <strong>Guidelines</strong>
+                            <button type="button" onclick="copyBlock('guidelines_details', this)">Copy</button>
+                        </summary>
+                        <pre id="guidelines_pre">{% if guidelines_text %}{{ guidelines_text }}{% else %}{% endif %}</pre>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if result or task_id %}
+            <div class="result">
+                <h2>Analysis Result</h2>
+                <div id="page_title_top" class="rule-title">Rule #1</div>
+                <div id="result_container">
+                    {% if result %}{{ result|safe }}{% else %}<pre>Waiting for results...</pre>{% endif %}
+                </div>
+
+                <div id="result_pager" class="pager">
+                    <button id="prev_page" type="button">◀ Prev</button>
+                    <span id="page_indicator" class="page-indicator">1 / 1</span>
+                    <button id="next_page" type="button">Next ▶</button>
+                    <span>Go to Rule #:</span>
+                    <input id="goto_input" type="text" placeholder="Rule ID or page #" value="">
+                    <button id="goto_btn" type="button">Go</button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="result error">
+                <h2>Error</h2>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <div class="result error" id="async_error" style="display:none;"></div>
+        </div>
+
+        <script>
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function toggleFields() {
+            var flow = document.getElementById('flow').value;
+            var ruleField = document.getElementById('new_rule_field');
+            var questionField = document.getElementById('question_field');
+            var problemField = document.getElementById('problem_field');
+            var guidelines = document.getElementById('guidelines_details');
+            if (flow === 'rule_analysis') {
+                ruleField.style.display = 'block';
+                questionField.style.display = 'none';
+                if (problemField) problemField.style.display = 'none';
+                if (guidelines) guidelines.style.display = 'block';
+            } else if (flow === 'all_rules_analysis') {
+                // For all-rules analysis only the uploaded context is needed
+                ruleField.style.display = 'none';
+                questionField.style.display = 'none';
+                if (problemField) problemField.style.display = 'none';
+                if (guidelines) guidelines.style.display = 'block';
+            } else if (flow === 'rule_generation') {
+                // For rule generation show question and problem inputs
+                ruleField.style.display = 'none';
+                questionField.style.display = 'block';
+                if (problemField) problemField.style.display = 'block';
+                if (guidelines) guidelines.style.display = 'block';
+            } else {
+                ruleField.style.display = 'none';
+                questionField.style.display = 'block';
+                if (problemField) problemField.style.display = 'none';
+                if (guidelines) guidelines.style.display = 'none';
+            }
+        }
+
+        // Copy the innerText of the <pre> inside the named details block.
+        function copyBlock(detailsId, btn) {
+            var pre = document.querySelector('#' + detailsId + ' pre');
+            if (!pre) return;
+            var text = pre.innerText;
+            navigator.clipboard.writeText(text).then(function () {
+                var old = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(function () { btn.innerText = old; }, 1200);
+            }, function (err) {
+                console.error('Copy failed', err);
+            });
+        }
+
+        // Clear only the main form fields and redirect to the index page
+        function clearAndRedirect() {
+            try {
+                var flow = document.getElementById('flow');
+                if (flow) flow.selectedIndex = 0; // reset to first option
+                var ids = ['new_rule', 'question', 'problem'];
+                ids.forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                var dialect = document.getElementById('sql_dialect');
+                if (dialect) dialect.value = 'PostgreSQL';
+                var schemaFile = document.getElementById('schema_file');
+                if (schemaFile) schemaFile.value = '';
+                var rulesFile = document.getElementById('rules_file');
+                if (rulesFile) rulesFile.value = '';
+            } catch (e) {
+                // ignore
+            }
+            window.location.href = '/';
+        }
+</script>
+<script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try { toggleFields(); } catch (e) { /* ignore if missing */ }
+        });
+</script>
+<script>
+// Paging for all_rules_analysis results passed as JSON list in `result_pages_json`
+var pages = [];
+var current = 0;
+var ruleIndexMap = {};
+var pager = document.getElementById('result_pager');
+var container = document.getElementById('result_container');
+var prevBtn = document.getElementById('prev_page');
+var nextBtn = document.getElementById('next_page');
+var indicator = document.getElementById('page_indicator');
+var gotoInput = document.getElementById('goto_input');
+var gotoBtn = document.getElementById('goto_btn');
+
+function updateRuleIndex(startIndex) {
+    for (var i = startIndex; i < pages.length; i++) {
+        var html = pages[i] || '';
+        var m = html.match(/Rule\s*#\s*(\d+)/i);
+        if (m && m[1]) {
+            ruleIndexMap[String(m[1])] = i;
+        }
+    }
+}
+
+function renderPage(i) {
+    if (!container || !pages.length) return;
+    container.innerHTML = pages[i];
+
+    var pageHtml = pages[i] || '';
+    var ruleId = null;
+    var m = pageHtml.match(/Rule\s*#\s*(\d+)/i);
+    if (m && m[1]) {
+        ruleId = m[1];
+    }
+
+    if (indicator) indicator.innerText = (i + 1) + ' / ' + pages.length;
+    var titleEl = document.getElementById('page_title_top');
+    if (titleEl) {
+        if (ruleId) titleEl.innerText = 'Rule #' + ruleId;
+        else titleEl.innerText = 'Rule ' + (i + 1);
+    }
+
+    if (prevBtn) prevBtn.disabled = i === 0;
+    if (nextBtn) nextBtn.disabled = i === pages.length - 1;
+    if (gotoInput) gotoInput.value = ruleId ? String(ruleId) : (i + 1);
+}
+
+function updatePagerVisibility() {
+    if (pager) pager.style.display = pages.length > 1 ? 'block' : 'none';
+}
+
+function addPages(newPages) {
+    if (!newPages || !newPages.length) return;
+    var startIndex = pages.length;
+    newPages.forEach(function(p) { pages.push(p); });
+    updateRuleIndex(startIndex);
+    if (pages.length === newPages.length) {
+        current = 0;
+    }
+    updatePagerVisibility();
+    renderPage(Math.min(current, pages.length - 1));
+}
+
+function resetResultsView(message) {
+    pages = [];
+    current = 0;
+    ruleIndexMap = {};
+    if (container) container.innerHTML = message || '<pre>Stopped.</pre>';
+    var titleEl = document.getElementById('page_title_top');
+    if (titleEl) titleEl.innerText = '';
+    updatePagerVisibility();
+}
+
+if (prevBtn) {
+    prevBtn.addEventListener('click', function() {
+        if (current > 0) {
+            current -= 1;
+            renderPage(current);
+        }
+    });
+}
+if (nextBtn) {
+    nextBtn.addEventListener('click', function() {
+        if (current < pages.length - 1) {
+            current += 1;
+            renderPage(current);
+        }
+    });
+}
+if (gotoBtn && gotoInput) {
+    gotoBtn.addEventListener('click', function() {
+        var raw = gotoInput.value;
+        if (!raw) return;
+        var asNum = parseInt(raw, 10);
+        var idx = null;
+
+        if (!isNaN(asNum) && ruleIndexMap.hasOwnProperty(String(asNum))) {
+            idx = ruleIndexMap[String(asNum)];
+        } else if (!isNaN(asNum)) {
+            alert('No conflicts in this rule');
+        } else if (ruleIndexMap.hasOwnProperty(raw)) {
+            idx = ruleIndexMap[raw];
+        }
+
+        if (idx === null) return;
+        current = idx;
+        renderPage(current);
+    });
+}
+
+{% if result_pages_json %}
+try {
+    var initialPages = {{ result_pages_json|safe }};
+    if (Array.isArray(initialPages)) {
+        addPages(initialPages);
+    }
+} catch (e) {
+    // ignore
+}
+{% endif %}
+</script>
+<script>
+{% if task_id %}
+var taskId = "{{ task_id }}";
+var nextIndex = 0;
+var pollIntervalMs = 3000;
+var pollTimer = null;
+var pollStopped = false;
+var pollController = null;
+
+function applyContext(data) {
+    if (data.rules_text) {
+        var rulesPre = document.getElementById('rules_pre');
+        if (rulesPre && !rulesPre.innerText) rulesPre.innerText = data.rules_text;
+    }
+    if (data.schema_json) {
+        var schemaPre = document.getElementById('schema_pre');
+        if (schemaPre && !schemaPre.innerText) schemaPre.innerText = data.schema_json;
+    }
+    if (data.guidelines_text) {
+        var guidelinesPre = document.getElementById('guidelines_pre');
+        if (guidelinesPre && !guidelinesPre.innerText) guidelinesPre.innerText = data.guidelines_text;
+    }
+}
+
+function updateProgress(data) {
+    var progress = document.getElementById('loadingProgress');
+    if (!progress) return;
+    if (data.total_rules) {
+        progress.innerText = 'Analyzing rules: ' + data.completed_rules + ' / ' + data.total_rules;
+    } else {
+        progress.innerText = 'Preparing analysis...';
+    }
+}
+
+function showAsyncError(message) {
+    var box = document.getElementById('async_error');
+    if (!box) return;
+    box.style.display = 'block';
+    box.innerHTML = '<h2>Error</h2><p>' + message + '</p>';
+}
+
+function pollTask() {
+    if (pollStopped) return;
+    pollController = new AbortController();
+    fetch('/tasks/' + taskId + '?from_index=' + nextIndex, { signal: pollController.signal })
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            if (pollStopped) return;
+            if (!data || data.status === 'failed') {
+                if (data && data.error) showAsyncError(data.error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                if (pollTimer) clearTimeout(pollTimer);
+                return;
+            }
+
+            applyContext(data);
+            updateProgress(data);
+            if (data.pages && data.pages.length) {
+                addPages(data.pages);
+                nextIndex = data.next_index || nextIndex + data.pages.length;
+            }
+
+            if (data.status === 'completed') {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                if (pollTimer) clearTimeout(pollTimer);
+                return;
+            }
+            if (data.status === 'cancelled') {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                if (pollTimer) clearTimeout(pollTimer);
+                return;
+            }
+
+            pollTimer = setTimeout(pollTask, pollIntervalMs);
+        })
+        .catch(function(err) {
+            if (pollStopped || (err && err.name === 'AbortError')) return;
+            console.error('Polling failed', err);
+            pollTimer = setTimeout(pollTask, pollIntervalMs);
+        });
+}
+
+function stopTask() {
+    pollStopped = true;
+    if (pollTimer) clearTimeout(pollTimer);
+    if (pollController) pollController.abort();
+    if (taskId) {
+        fetch('/tasks/' + taskId + '/cancel', { method: 'POST' }).catch(function() {});
+    }
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    updateProgress({});
+    pollTask();
+});
+{% endif %}
+</script>
+</body>
+
+</html>
