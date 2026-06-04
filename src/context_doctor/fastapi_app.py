@@ -8,9 +8,9 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
+from .context_store import ContextStore
 from .database.repository import HistoryRepository
 from .database.session import get_db_session, init_db
-from .context_store import ContextStore
 from .logic import AnalysisParams, run_analysis
 from .services.history_service import HistoryService
 from .task_manager import TaskManager

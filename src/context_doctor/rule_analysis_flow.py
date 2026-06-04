@@ -61,32 +61,28 @@ guidelines = read_text("context_doctor.guidelines", "guidelines.md")
 def compare_rules_and_descriptions(rules, dialect, descriptions, new_rule):
     messages = []
     for i, val in enumerate(conflict_detection_prompt):
-        messages.append(
-            {
-                "role": val["role"],
-                "content": val["content"].format(
-                    list_of_rules=rules,
-                    db_dialect=dialect,
-                    schema_descriptions=descriptions,
-                    new_rule=new_rule,
-                ),
-            }
-        )
+        messages.append({
+            "role": val["role"],
+            "content": val["content"].format(
+                list_of_rules=rules,
+                db_dialect=dialect,
+                schema_descriptions=descriptions,
+                new_rule=new_rule,
+            ),
+        })
     return parse_response(messages, AcceptNewRule)
 
 
 def validate_rule_writing_guidelines(new_rule, guidelines=guidelines):
     messages = []
     for i, val in enumerate(validation_prompt):
-        messages.append(
-            {
-                "role": val["role"],
-                "content": val["content"].format(
-                    guidelines=guidelines,
-                    new_rule=new_rule,
-                ),
-            }
-        )
+        messages.append({
+            "role": val["role"],
+            "content": val["content"].format(
+                guidelines=guidelines,
+                new_rule=new_rule,
+            ),
+        })
     response = parse_response(messages, RuleValidationResult).model_dump()
     response["violations"] = "\n".join(response["violations"])
     response["new_rule"] = new_rule
@@ -200,23 +196,22 @@ def beautify_result(result) -> pd.DataFrame:
     beautified = [(k, v) for k, v in result.items()]
     b_df = pd.DataFrame(beautified, columns=["Category", "Details"])
     b_df = (
-        b_df.set_index("Category")
-        .reindex(
-            [
-                "new_rule",
-                "typos",
-                "dialect_inconsistencies",
-                "contradictions_explained",
-                "contradictions_with_rules",
-                "contradictions_with_schema",
-                "duplications_explained",
-                "duplications_with_rules",
-                "duplications_with_schema",
-                "guideline_violations",
-                "comparison_analysis_summary",
-                "guideline_analysis_summary",
-            ]
-        )
+        b_df
+        .set_index("Category")
+        .reindex([
+            "new_rule",
+            "typos",
+            "dialect_inconsistencies",
+            "contradictions_explained",
+            "contradictions_with_rules",
+            "contradictions_with_schema",
+            "duplications_explained",
+            "duplications_with_rules",
+            "duplications_with_schema",
+            "guideline_violations",
+            "comparison_analysis_summary",
+            "guideline_analysis_summary",
+        ])
         .reset_index()
     )
     return b_df

@@ -1,6 +1,6 @@
 # Context Doctor
 
-Context Doctor is a small FastAPI demo for inspecting text-to-SQL rule context. It can compare a proposed rule against existing rules and schema descriptions, analyze all rules, inspect context relevant to a user question, or suggest a new rule for a described SQL-generation problem.
+Context Doctor is a small FastAPI demo for inspecting text-to-SQL rule context. It can compare a proposed SQL generation rule against existing rules and schema descriptions, analyze all rules, inspect context relevant to a user question, or suggest a new rule for a described SQL-generation problem.
 
 ## Workflows
 

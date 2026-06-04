@@ -60,33 +60,29 @@ filter_context_prompt = read_prompt_steps("prompt_template_question_filtering.ya
 def filter_relevant_rules_and_descriptions(rules, descriptions, question):
     messages = []
     for i, val in enumerate(filter_context_prompt):
-        messages.append(
-            {
-                "role": val["role"],
-                "content": val["content"].format(
-                    rules=rules,
-                    descriptions=descriptions,
-                    question=question,
-                ),
-            }
-        )
+        messages.append({
+            "role": val["role"],
+            "content": val["content"].format(
+                rules=rules,
+                descriptions=descriptions,
+                question=question,
+            ),
+        })
     return parse_response(messages, RelevantContext)
 
 
 def compare_rules_and_descriptions(rules, dialect, descriptions, new_rule):
     messages = []
     for i, val in enumerate(conflict_detection_prompt):
-        messages.append(
-            {
-                "role": val["role"],
-                "content": val["content"].format(
-                    list_of_rules=rules,
-                    db_dialect=dialect,
-                    schema_descriptions=descriptions,
-                    new_rule=new_rule,
-                ),
-            }
-        )
+        messages.append({
+            "role": val["role"],
+            "content": val["content"].format(
+                list_of_rules=rules,
+                db_dialect=dialect,
+                schema_descriptions=descriptions,
+                new_rule=new_rule,
+            ),
+        })
     return parse_response(messages, QuestionAnalysis)
 
 
@@ -124,20 +120,19 @@ def beautify_result(result) -> pd.DataFrame:
     b_df = pd.DataFrame(beautified)
     b_df.columns = ["Category", "Details"]
     b_df = (
-        b_df.set_index("Category")
-        .reindex(
-            [
-                "question",
-                "relevant_rules",
-                "relevant_descriptions",
-                "typos",
-                "dialect_inconsistencies",
-                "contradictions",
-                "duplications",
-                "filtering_analysis_summary",
-                "comparison_analysis_summary",
-            ]
-        )
+        b_df
+        .set_index("Category")
+        .reindex([
+            "question",
+            "relevant_rules",
+            "relevant_descriptions",
+            "typos",
+            "dialect_inconsistencies",
+            "contradictions",
+            "duplications",
+            "filtering_analysis_summary",
+            "comparison_analysis_summary",
+        ])
         .reset_index()
     )
     return b_df

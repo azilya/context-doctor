@@ -27,19 +27,17 @@ def generate_rule_suggestion(
 ):
     messages = []
     for i, val in enumerate(rule_generation_prompt):
-        messages.append(
-            {
-                "role": val["role"],
-                "content": val["content"].format(
-                    rules=rules,
-                    descriptions=descriptions,
-                    dialect=dialect,
-                    question=question,
-                    problem=problem,
-                    guidelines=guidelines,
-                ),
-            }
-        )
+        messages.append({
+            "role": val["role"],
+            "content": val["content"].format(
+                rules=rules,
+                descriptions=descriptions,
+                dialect=dialect,
+                question=question,
+                problem=problem,
+                guidelines=guidelines,
+            ),
+        })
     # if feedback and isinstance(feedback, pd.DataFrame):
     #     messages.append(
     #         {
@@ -80,24 +78,23 @@ def generate_rule_pipeline(rules, descriptions, question, problem, dialect):
         rule_suggestion.analysis_summary,
     ]
     rule_eval = (
-        rule_eval.set_index("Category")
-        .reindex(
-            [
-                "new_rule",
-                "typos",
-                "dialect_inconsistencies",
-                "contradictions_explained",
-                "contradictions_with_rules",
-                "contradictions_with_schema",
-                "duplications_explained",
-                "duplications_with_rules",
-                "duplications_with_schema",
-                "guideline_violations",
-                "generation_analysis_summary",
-                "comparison_analysis_summary",
-                "guideline_analysis_summary",
-            ]
-        )
+        rule_eval
+        .set_index("Category")
+        .reindex([
+            "new_rule",
+            "typos",
+            "dialect_inconsistencies",
+            "contradictions_explained",
+            "contradictions_with_rules",
+            "contradictions_with_schema",
+            "duplications_explained",
+            "duplications_with_rules",
+            "duplications_with_schema",
+            "guideline_violations",
+            "generation_analysis_summary",
+            "comparison_analysis_summary",
+            "guideline_analysis_summary",
+        ])
         .reset_index()
     )
 

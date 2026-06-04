@@ -147,7 +147,8 @@ class HistoryRepository:
 
         # Apply ordering and pagination
         entries = (
-            query.order_by(desc(QueryHistory.created_at))
+            query
+            .order_by(desc(QueryHistory.created_at))
             .limit(limit)
             .offset(offset)
             .all()
@@ -175,7 +176,8 @@ class HistoryRepository:
 
         # Total queries in period
         total = (
-            session.query(QueryHistory)
+            session
+            .query(QueryHistory)
             .filter(QueryHistory.created_at >= cutoff_date)
             .count()
         )
@@ -190,7 +192,8 @@ class HistoryRepository:
         ]
         for flow_type in flow_types:
             count = (
-                session.query(QueryHistory)
+                session
+                .query(QueryHistory)
                 .filter(
                     and_(
                         QueryHistory.flow_type == flow_type,
@@ -206,7 +209,8 @@ class HistoryRepository:
         statuses = ["completed", "failed", "cancelled", "running"]
         for status in statuses:
             count = (
-                session.query(QueryHistory)
+                session
+                .query(QueryHistory)
                 .filter(
                     and_(
                         QueryHistory.status == status,
@@ -219,7 +223,8 @@ class HistoryRepository:
 
         # Average duration for completed queries
         avg_duration = (
-            session.query(func.avg(QueryHistory.duration_seconds))
+            session
+            .query(func.avg(QueryHistory.duration_seconds))
             .filter(
                 and_(
                     QueryHistory.status == "completed",
