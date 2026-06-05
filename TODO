@@ -1,17 +1,48 @@
 # TODOs
 
-* context caching architecture:
-  * Current baseline: require schema JSON, rules text, and SQL dialect uploads on every analysis request.
-  * Keep `ContextStore` as the boundary for context ingestion, validation, normalization, and future persistence.
-  * Add a `context_id` once caching is introduced; generated after upload and returned to the UI.
-  * Store cached context as raw schema JSON, normalized schema description, rules text, SQL dialect, source filenames, creation time, and last-used time.
-  * Persist `context_id` in history so completed runs can be traced back to the context snapshot used.
-  * Add update semantics: uploading new schema/rules can either create a new context or replace an existing context explicitly.
-  * Add deletion/expiry policy to avoid unbounded in-memory or database growth.
-  * UI future state: choose between "Upload new context" and "Reuse cached context".
-  * Keep async task execution using an immutable `AnalysisContext` snapshot so cached context updates do not affect in-flight runs.
-* tools:
-  * SQL dialect documentation to check validity
-* refactor the code
-  * switch to OpenAPI: routers, /api endpoints etc.
-  * folder for flows
+## Testing plan
+
+- Build shared fixtures and LLM mocks for schema JSON, rules text, SQL dialects, questions, generated rules, and representative parsed responses.
+- Add unit tests for flow foundations: schema normalization, rule splitting, prompt input construction, result formatting, task-state transitions, cancellation checks, and non-critical history failures.
+- Add API tests for `/`, `/history`, `POST /run`, `GET /tasks/{task_id}`, and `POST /tasks/{task_id}/cancel`.
+- Add functional tests for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis` workflows.
+- Document local test setup, recommended test commands, and the manual checklist in `TEST_PLAN.md`.
+
+## Context caching
+
+- Rename/refactor `ContextStore` into `ContextService` in `context_doctor/services/context_service.py`.
+- Update all `context_store` imports/usages to the new service boundary.
+- Keep `AnalysisContext` colocated with `ContextService`; move it later only if it becomes independently shared.
+- Add `ContextRepository` or a storage object when persistence is introduced.
+- Keep `ContextService` responsible for ingestion, validation, normalization, and persistence orchestration.
+- Surface context ingestion and validation failures as critical path errors.
+- Generate and return a `context_id` after context upload.
+- Store raw schema JSON, normalized schema description, rules text, SQL dialect, source filenames, creation time, and last-used time.
+- Persist `context_id` in history for run-to-context traceability.
+- Add explicit create-vs-replace semantics for uploaded schema/rules updates.
+- Add deletion or expiry to bound cached-context storage growth.
+- Add UI controls for uploading a new context or reusing a cached context.
+- Use immutable `AnalysisContext` snapshots for async tasks so updates do not affect in-flight runs.
+
+## Frontend JavaScript extraction
+
+- Create `context_doctor/static/index.js` as the package static JS entrypoint.
+- Serve package static assets through FastAPI and load the entrypoint from Jinja.
+- Move inline JavaScript into small modules/functions.
+- Keep templates focused on markup, Jinja-provided data, and data attributes.
+- Preserve existing flows and endpoints during extraction: `/run`, `/tasks/{task_id}`, cancellation, synchronous results, polling, and partial results.
+- Factor testable DOM, state, and helper functions for flow selection, loading/polling state, cancellation, partial-results rendering, paging/goto logic, and rendering helpers.
+- Add one lightweight JS unit test setup, such as Vitest/jsdom or equivalent.
+- Avoid visual redesign; keep extraction behavior-preserving.
+
+## Tools (give more thought)
+
+- Move away from prompt-based workflows to actual agentic
+- Tools to add:
+  - Check that SQL dialect documentation is valid and current.
+
+## API and flow refactor
+
+- Split OpenAPI/API endpoints into routers.
+- Move API routes under `/api` endpoints.
+- Move analysis flows into a dedicated flows folder.
