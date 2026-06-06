@@ -223,3 +223,18 @@ def no_history_writes(monkeypatch):
     for name, method in methods.items():
         monkeypatch.setattr(HistoryService, name, method)
     return methods
+
+
+@pytest.fixture
+def no_history_logging(monkeypatch):
+    from context_doctor.services.history_service import HistoryService
+
+    methods = {
+        "start_sync_execution": Mock(return_value=101),
+        "complete_sync_execution": Mock(),
+        "fail_execution": Mock(),
+        "start_async_execution": Mock(return_value=202),
+    }
+    for name, method in methods.items():
+        monkeypatch.setattr(HistoryService, name, method)
+    return methods

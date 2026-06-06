@@ -48,6 +48,20 @@ def test_cancel_task_marks_running_task_cancelled():
     assert manager.get_status("missing") is None
 
 
+def test_get_status_returns_incremental_pages_for_polling():
+    manager = manager_with_task(status="running")
+    manager._tasks["task-id"].results = {
+        2: "<p>Rule #3</p>",
+        0: "<p>Rule #1</p>",
+        1: None,
+    }
+
+    status = manager.get_status("task-id", from_index=1)
+
+    assert status["pages"] == ["<p>Rule #3</p>"]
+    assert status["next_index"] == 3
+
+
 def test_run_all_rules_analysis_completes_with_mocked_rule_analysis(
     monkeypatch: pytest.MonkeyPatch,
     analysis_context: task_manager.AnalysisContext,
