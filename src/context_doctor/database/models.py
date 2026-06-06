@@ -1,8 +1,9 @@
 """SQLAlchemy models for query history tracking."""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 

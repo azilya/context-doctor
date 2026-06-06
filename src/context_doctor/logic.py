@@ -34,9 +34,9 @@ def run_analysis(params: AnalysisParams):
 
     if params.flow == "rule_analysis":
         logging.info("Using single rule analysis flow")
-        if not params.new_rule:
+        new_rule = (params.new_rule or "").strip()
+        if not new_rule:
             raise ValueError("New rule is required for rule_analysis flow")
-        new_rule = params.new_rule.strip()
         analysis_output, guidelines_text = analyze_rule_pipeline(
             new_rule, rules, sql_dialect, schema_description
         )
@@ -51,9 +51,9 @@ def run_analysis(params: AnalysisParams):
         logging.info(f"{analysis_output}"[:1000])
     elif params.flow == "question_analysis":
         logging.info("Using question analysis flow")
-        if not params.question:
+        question = (params.question or "").strip()
+        if not question:
             raise ValueError("Question is required for question_analysis flow")
-        question = params.question.strip()
         analysis_output = filter_and_compare_question(
             question, rules, sql_dialect, schema_description
         )
@@ -62,11 +62,11 @@ def run_analysis(params: AnalysisParams):
         logging.info(f"{analysis_output}")
     elif params.flow == "rule_generation":
         logging.info("Using rule generation flow")
-        if not params.problem:
+        problem = (params.problem or "").strip()
+        if not problem:
             raise ValueError("Problem description is required for rule_generation flow")
         # question is optional in the form; default to empty string if not provided
         question = params.question.strip() if params.question else ""
-        problem = params.problem.strip()
         analysis_output, guidelines = generate_rule_pipeline(
             rules, schema_description, question, problem, sql_dialect
         )

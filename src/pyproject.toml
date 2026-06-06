@@ -36,3 +36,6 @@ dev = [
     "ruff>=0.15.15",
     "watchfiles>=1.2.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
