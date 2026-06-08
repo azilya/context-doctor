@@ -332,27 +332,25 @@ def test_run_history_failure_logging_remains_noncritical_for_workflow_errors(
 
 
 def test_task_status_returns_incremental_payload(monkeypatch, api_client):
-    get_status = Mock(
-        return_value={
-            "task_id": "task-123",
-            "status": "running",
-            "total_rules": 2,
-            "completed_rules": 1,
-            "pages": ["<p>Rule #1</p>"],
-            "next_index": 1,
-            "error": None,
-            "rules_text": "Rule #1",
-            "schema_json": "{}",
-            "guidelines_text": "GUIDELINES",
-        }
-    )
+    task_status = {
+        "task_id": "task-123",
+        "status": "running",
+        "total_rules": 2,
+        "completed_rules": 1,
+        "pages": ["<p>Rule #1</p>"],
+        "next_index": 1,
+        "error": None,
+        "rules_text": "Rule #1",
+        "schema_json": "{}",
+        "guidelines_text": "GUIDELINES",
+    }
+    get_status = Mock(return_value=task_status)
     monkeypatch.setattr(fastapi_app, "task_manager", Mock(get_status=get_status))
 
     response = api_client.get("/tasks/task-123?from_index=1")
 
     assert response.status_code == 200
-    assert response.json()["pages"] == ["<p>Rule #1</p>"]
-    assert response.json()["next_index"] == 1
+    assert response.json() == task_status
     get_status.assert_called_once_with("task-123", from_index=1)
 
 

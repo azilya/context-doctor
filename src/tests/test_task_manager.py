@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 
 from context_doctor import task_manager
@@ -38,6 +39,12 @@ def manager_with_task(status="pending"):
     return manager
 
 
+def test_new_task_state_is_pending():
+    manager = manager_with_task()
+
+    assert manager.get_status("task-id")["status"] == "pending"
+
+
 def test_cancel_task_marks_running_task_cancelled():
     manager = manager_with_task(status="running")
 
@@ -65,6 +72,38 @@ def test_get_status_returns_incremental_pages_for_polling():
 
     assert status_after_known_results["pages"] == []
     assert status_after_known_results["next_index"] == 3
+
+
+def test_analyze_one_skips_empty_results(monkeypatch: pytest.MonkeyPatch):
+    manager = TaskManager()
+    empty_result = pd.DataFrame(
+        [
+            ["typos", ""],
+            ["dialect_inconsistencies", ""],
+            ["contradictions_explained", ""],
+            ["contradictions_with_rules", ""],
+            ["contradictions_with_schema", ""],
+            ["duplications_explained", ""],
+            ["duplications_with_rules", ""],
+            ["duplications_with_schema", ""],
+            ["guideline_violations", ""],
+        ],
+        columns=["Category", "Details"],
+    )
+    analyze_single_rule_pipeline = Mock(return_value=empty_result)
+    prettify_html = Mock(side_effect=AssertionError("empty results should not render HTML"))
+    monkeypatch.setattr(
+        task_manager, "analyze_single_rule_pipeline", analyze_single_rule_pipeline
+    )
+    monkeypatch.setattr(task_manager, "prettify_html", prettify_html)
+
+    result = manager._analyze_one("Rule #1", ["Rule #1"], "PostgreSQL", {})
+
+    assert result is None
+    analyze_single_rule_pipeline.assert_called_once_with(
+        "Rule #1", ["Rule #1"], "PostgreSQL", {}
+    )
+    prettify_html.assert_not_called()
 
 
 def test_run_all_rules_analysis_completes_with_mocked_rule_analysis(
