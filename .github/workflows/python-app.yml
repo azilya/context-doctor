@@ -38,4 +38,4 @@ jobs:
         src: "./src"
 
     - name: Run tests
-      run: uv run pytest src/tests
+      run: uv run pytest
