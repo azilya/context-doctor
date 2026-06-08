@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -17,20 +17,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+    - uses: actions/checkout@v6
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
-        with:
-          working-directory: "./src"
+    - name: Install uv
+      uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+      with:
+        working-directory: "./src"
 
-      - name: Install the project
-        run: uv sync --locked --all-extras --dev --directory=src
+    - name: Install the project
+      run: uv sync --locked --all-extras --dev --directory=src
 
-      - name: Check with Ruff
-        uses: astral-sh/ruff-action@v4.0.0
-        with:
-          src: "./src"
+    - name: Check with Ruff
+      uses: astral-sh/ruff-action@v4.0.0
+      with:
+        src: "./src"
 
-      - name: Run tests
-        run: uv run pytest
+    - name: Run tests
+      run: uv run --directory=src pytest tests
