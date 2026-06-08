@@ -1,12 +1,11 @@
 import json
-import sys
-from pathlib import Path
+from contextlib import contextmanager
+from datetime import datetime
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
+from fastapi.testclient import TestClient
 
 
 class ParseResponseRecorder:
@@ -50,6 +49,82 @@ def block_real_openai_client(monkeypatch):
 @pytest.fixture
 def parse_response_recorder():
     return ParseResponseRecorder
+
+
+def assert_response_contains(response, *fragments):
+    assert response.status_code == 200
+    for fragment in fragments:
+        assert fragment in response.text
+
+
+def fake_history_entry(**overrides):
+    values = {
+        "id": 42,
+        "flow_type": "rule_analysis",
+        "execution_mode": "sync",
+        "input_params": json.dumps({"new_rule": "Rule #9: Use SUM(revenue)."}),
+        "created_at": datetime(2026, 6, 8, 12, 30, 0),
+        "duration_seconds": 1.25,
+        "status": "completed",
+        "result_html": "<table><tr><td>analysis result</td></tr></table>",
+        "error_message": None,
+        "rules_text": "Rule #1: Existing rule.",
+        "schema_json": '{"tables": {"orders": {}}}',
+        "guidelines_text": "Guideline text",
+        "task_id": None,
+        "total_rules": None,
+        "completed_rules": None,
+        "client_backend_url": "",
+        "user_agent": "test-agent",
+        "ip_address": "127.0.0.1",
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+@pytest.fixture
+def api_client():
+    from context_doctor import fastapi_app
+
+    with TestClient(fastapi_app.app) as client:
+        yield client
+
+
+def make_upload_files(schema_content, rules_content):
+    return {
+        "schema_file": ("schema.json", schema_content, "application/json"),
+        "rules_file": ("rules.md", rules_content, "text/markdown"),
+    }
+
+
+@pytest.fixture
+def upload_files(valid_schema_bytes, valid_rules_bytes):
+    return make_upload_files(valid_schema_bytes, valid_rules_bytes)
+
+
+@pytest.fixture
+def post_run(api_client, upload_files):
+    def _post_run(data, files=None):
+        return api_client.post("/run", data=data, files=files or upload_files)
+
+    return _post_run
+
+
+def session_context(session):
+    @contextmanager
+    def fake_db_session():
+        yield session
+
+    return fake_db_session
+
+
+@pytest.fixture
+def history_session(monkeypatch):
+    from context_doctor import fastapi_app
+
+    session = object()
+    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(session))
+    return session
 
 
 @pytest.fixture

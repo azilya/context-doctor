@@ -1,184 +1,20 @@
-import json
-from contextlib import contextmanager
-from datetime import datetime
-from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
-from fastapi.testclient import TestClient
 
 from context_doctor import fastapi_app
-
-
-@pytest.fixture
-def api_client():
-    return TestClient(fastapi_app.app)
-
-
-def upload_files(valid_schema_bytes, valid_rules_bytes):
-    return {
-        "schema_file": ("schema.json", valid_schema_bytes, "application/json"),
-        "rules_file": ("rules.md", valid_rules_bytes, "text/markdown"),
-    }
-
-
-def fake_history_entry(**overrides):
-    values = {
-        "id": 42,
-        "flow_type": "rule_analysis",
-        "execution_mode": "sync",
-        "input_params": json.dumps({"new_rule": "Rule #9: Use SUM(revenue)."}),
-        "created_at": datetime(2026, 6, 8, 12, 30, 0),
-        "duration_seconds": 1.25,
-        "status": "completed",
-        "result_html": "<table><tr><td>analysis result</td></tr></table>",
-        "error_message": None,
-        "rules_text": "Rule #1: Existing rule.",
-        "schema_json": '{"tables": {"orders": {}}}',
-        "guidelines_text": "Guideline text",
-        "task_id": None,
-        "total_rules": None,
-        "completed_rules": None,
-        "client_backend_url": "",
-        "user_agent": "test-agent",
-        "ip_address": "127.0.0.1",
-    }
-    values.update(overrides)
-    return SimpleNamespace(**values)
-
-
-def session_context(session):
-    @contextmanager
-    def fake_db_session():
-        yield session
-
-    return fake_db_session
+from tests.conftest import assert_response_contains
 
 
 def test_index_renders_application_shell(api_client):
     response = api_client.get("/")
 
-    assert response.status_code == 200
-    assert "Context Doctor" in response.text
-    assert 'form action="/run"' in response.text
-    assert 'name="schema_file"' in response.text
-
-
-def test_history_page_uses_repository_boundary(monkeypatch, api_client):
-    session = object()
-    list_entries = Mock(return_value=([], 0))
-    get_statistics = Mock(
-        return_value={
-            "total_queries": 4,
-            "average_duration_seconds": 1.25,
-            "by_status": {"completed": 3, "failed": 1},
-        }
+    assert_response_contains(
+        response,
+        "Context Doctor",
+        'form action="/run"',
+        'name="schema_file"',
     )
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(session))
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "list_entries", list_entries)
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "get_statistics", get_statistics)
-
-    response = api_client.get(
-        "/history?flow=rule_analysis&status=completed&search=revenue&page=2&limit=5"
-    )
-
-    assert response.status_code == 200
-    assert "Query History" in response.text
-    assert "No History Found" in response.text
-    assert "Total Queries" in response.text
-    list_entries.assert_called_once_with(
-        session=session,
-        flow_type="rule_analysis",
-        status="completed",
-        search_query="revenue",
-        limit=5,
-        offset=5,
-    )
-    get_statistics.assert_called_once_with(session, days=7)
-
-
-def test_history_page_renders_error_fallback_when_repository_raises(
-    monkeypatch,
-    api_client,
-):
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(object()))
-    monkeypatch.setattr(
-        fastapi_app.HistoryRepository,
-        "list_entries",
-        Mock(side_effect=RuntimeError("history unavailable")),
-    )
-
-    response = api_client.get("/history")
-
-    assert response.status_code == 200
-    assert "history unavailable" in response.text
-    assert "No History Found" in response.text
-
-
-def test_history_detail_uses_repository_boundary(monkeypatch, api_client):
-    session = object()
-    entry = fake_history_entry()
-    get_by_id = Mock(return_value=entry)
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(session))
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "get_by_id", get_by_id)
-
-    response = api_client.get("/history/42")
-
-    assert response.status_code == 200
-    assert "Query History Entry #42" in response.text
-    assert "Rule #9: Use SUM(revenue)." in response.text
-    assert "analysis result" in response.text
-    assert "Guideline text" in response.text
-    get_by_id.assert_called_once_with(session, 42)
-
-
-def test_history_detail_unknown_entry_returns_404(monkeypatch, api_client):
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(object()))
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "get_by_id", Mock(return_value=None))
-
-    response = api_client.get("/history/404")
-
-    assert response.status_code == 404
-    assert response.json() == {"detail": "History entry not found"}
-
-
-def test_history_stats_uses_repository_boundary(monkeypatch, api_client):
-    session = object()
-    get_statistics = Mock(return_value={"total_queries": 3, "period_days": 14})
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(session))
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "get_statistics", get_statistics)
-
-    response = api_client.get("/api/history/stats?days=14")
-
-    assert response.status_code == 200
-    assert response.json() == {"total_queries": 3, "period_days": 14}
-    get_statistics.assert_called_once_with(session, days=14)
-
-
-def test_delete_history_entry_uses_repository_boundary(monkeypatch, api_client):
-    session = object()
-    delete_entry = Mock(return_value=True)
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(session))
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "delete_entry", delete_entry)
-
-    response = api_client.delete("/api/history/42")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "deleted", "id": 42}
-    delete_entry.assert_called_once_with(session, 42)
-
-
-def test_delete_history_entry_unknown_entry_returns_404(monkeypatch, api_client):
-    monkeypatch.setattr(fastapi_app, "get_db_session", session_context(object()))
-    monkeypatch.setattr(
-        fastapi_app.HistoryRepository,
-        "delete_entry",
-        Mock(return_value=False),
-    )
-
-    response = api_client.delete("/api/history/404")
-    assert response.status_code == 404
-    assert response.json() == {"detail": "History entry not found"}
 
 
 @pytest.mark.parametrize(
@@ -209,10 +45,8 @@ def test_delete_history_entry_unknown_entry_returns_404(monkeypatch, api_client)
 )
 def test_run_sync_flows_render_result_without_external_services(
     monkeypatch,
-    api_client,
     no_history_logging,
-    valid_schema_bytes,
-    valid_rules_bytes,
+    post_run,
     flow,
     form_overrides,
     expected_fields,
@@ -230,17 +64,14 @@ def test_run_sync_flows_render_result_without_external_services(
 
     monkeypatch.setattr(fastapi_app, "run_analysis", fake_run_analysis)
 
-    form_data = {"flow": flow, "sql_dialect": " PostgreSQL ", **form_overrides}
-    response = api_client.post(
-        "/run",
-        data=form_data,
-        files=upload_files(valid_schema_bytes, valid_rules_bytes),
-    )
+    response = post_run({"flow": flow, "sql_dialect": " PostgreSQL ", **form_overrides})
 
-    assert response.status_code == 200
-    assert f"{flow} rendered result" in response.text
-    assert "Rule #1: ALWAYS join orders" in response.text
-    assert "orders" in response.text
+    assert_response_contains(
+        response,
+        f"{flow} rendered result",
+        "Rule #1: ALWAYS join orders",
+        "orders",
+    )
     assert len(captured_params) == 1
     params = captured_params[0]
     assert params.flow == flow
@@ -252,33 +83,55 @@ def test_run_sync_flows_render_result_without_external_services(
     no_history_logging["fail_execution"].assert_not_called()
 
 
+@pytest.fixture
+def llm_boundary_mocks(monkeypatch):
+    from context_doctor import logic
+
+    mocks = {
+        "analyze_rule_pipeline": Mock(
+            side_effect=AssertionError("rule analysis LLM must not run")
+        ),
+        "filter_and_compare_question": Mock(
+            side_effect=AssertionError("question analysis LLM must not run")
+        ),
+        "generate_rule_pipeline": Mock(
+            side_effect=AssertionError("rule generation LLM must not run")
+        ),
+        "all_rules_pipeline": Mock(
+            side_effect=AssertionError("all-rules LLM must not run")
+        ),
+    }
+    for name, mock in mocks.items():
+        monkeypatch.setattr(logic, name, mock)
+    return mocks
+
+
 def test_run_all_rules_starts_task_and_renders_polling_state(
     monkeypatch,
-    api_client,
     no_history_logging,
-    valid_schema_bytes,
-    valid_rules_bytes,
+    post_run,
 ):
     start_all_rules_analysis = Mock(return_value="task-123")
-    fake_task_manager = Mock(start_all_rules_analysis=start_all_rules_analysis)
-    monkeypatch.setattr(fastapi_app, "task_manager", fake_task_manager)
+    monkeypatch.setattr(
+        fastapi_app,
+        "task_manager",
+        Mock(start_all_rules_analysis=start_all_rules_analysis),
+    )
     monkeypatch.setattr(
         fastapi_app,
         "run_analysis",
         Mock(side_effect=AssertionError("all_rules_analysis must start async task")),
     )
 
-    response = api_client.post(
-        "/run",
-        data={"flow": "all_rules_analysis", "sql_dialect": "PostgreSQL"},
-        files=upload_files(valid_schema_bytes, valid_rules_bytes),
-    )
+    response = post_run({"flow": "all_rules_analysis", "sql_dialect": "PostgreSQL"})
 
-    assert response.status_code == 200
-    assert "Waiting for results" in response.text
-    assert 'var taskId = "task-123";' in response.text
-    assert "pollTask()" in response.text
-    assert "stopTask()" in response.text
+    assert_response_contains(
+        response,
+        "Waiting for results",
+        'var taskId = "task-123";',
+        "pollTask()",
+        "stopTask()",
+    )
     start_all_rules_analysis.assert_called_once()
     (started_context,), _ = start_all_rules_analysis.call_args
     assert started_context.sql_dialect == "PostgreSQL"
@@ -350,8 +203,8 @@ def test_run_all_rules_starts_task_and_renders_polling_state(
 )
 def test_run_context_boundary_errors_do_not_call_analysis_or_history(
     monkeypatch,
-    api_client,
     no_history_logging,
+    post_run,
     valid_schema_bytes,
     valid_rules_bytes,
     data,
@@ -367,11 +220,7 @@ def test_run_context_boundary_errors_do_not_call_analysis_or_history(
         Mock(start_all_rules_analysis=start_all_rules_analysis),
     )
 
-    response = api_client.post(
-        "/run",
-        data=data,
-        files=files(valid_schema_bytes, valid_rules_bytes),
-    )
+    response = post_run(data, files=files(valid_schema_bytes, valid_rules_bytes))
 
     assert response.status_code == 200
     assert expected_error in response.text
@@ -402,37 +251,16 @@ def test_run_context_boundary_errors_do_not_call_analysis_or_history(
 )
 def test_run_flow_input_errors_fail_before_llm_boundaries(
     monkeypatch,
-    api_client,
     no_history_logging,
-    valid_schema_bytes,
-    valid_rules_bytes,
+    post_run,
+    llm_boundary_mocks,
     data,
     expected_error,
 ):
-    from context_doctor import logic
+    response = post_run(data)
 
-    llm_backed_functions = [
-        Mock(side_effect=AssertionError("rule analysis LLM must not run")),
-        Mock(side_effect=AssertionError("question analysis LLM must not run")),
-        Mock(side_effect=AssertionError("rule generation LLM must not run")),
-        Mock(side_effect=AssertionError("all-rules LLM must not run")),
-    ]
-    monkeypatch.setattr(logic, "analyze_rule_pipeline", llm_backed_functions[0])
-    monkeypatch.setattr(logic, "filter_and_compare_question", llm_backed_functions[1])
-    monkeypatch.setattr(logic, "generate_rule_pipeline", llm_backed_functions[2])
-    monkeypatch.setattr(logic, "all_rules_pipeline", llm_backed_functions[3])
-
-    response = api_client.post(
-        "/run",
-        data=data,
-        files=upload_files(valid_schema_bytes, valid_rules_bytes),
-    )
-
-    assert response.status_code == 200
-    assert expected_error in response.text
-    assert "schema.json" in response.text
-    assert "rules.md" in response.text
-    for llm_backed_function in llm_backed_functions:
+    assert_response_contains(response, expected_error, "schema.json", "rules.md")
+    for llm_backed_function in llm_boundary_mocks.values():
         llm_backed_function.assert_not_called()
     no_history_logging["start_sync_execution"].assert_called_once()
     no_history_logging["complete_sync_execution"].assert_not_called()
@@ -441,10 +269,8 @@ def test_run_flow_input_errors_fail_before_llm_boundaries(
 
 def test_run_workflow_error_preserves_form_values_and_logs_noncritical_failure(
     monkeypatch,
-    api_client,
     no_history_logging,
-    valid_schema_bytes,
-    valid_rules_bytes,
+    post_run,
 ):
     monkeypatch.setattr(
         fastapi_app,
@@ -452,22 +278,22 @@ def test_run_workflow_error_preserves_form_values_and_logs_noncritical_failure(
         Mock(side_effect=RuntimeError("LLM parse failed: invalid structured output")),
     )
 
-    response = api_client.post(
-        "/run",
-        data={
+    response = post_run(
+        {
             "flow": "rule_analysis",
             "sql_dialect": " PostgreSQL ",
             "new_rule": " Rule #9: Use SUM(orders.revenue). ",
-        },
-        files=upload_files(valid_schema_bytes, valid_rules_bytes),
+        }
     )
 
-    assert response.status_code == 200
-    assert "LLM parse failed: invalid structured output" in response.text
-    assert "Rule #9: Use SUM(orders.revenue)." in response.text
-    assert "PostgreSQL" in response.text
-    assert "schema.json" in response.text
-    assert "rules.md" in response.text
+    assert_response_contains(
+        response,
+        "LLM parse failed: invalid structured output",
+        "Rule #9: Use SUM(orders.revenue).",
+        "PostgreSQL",
+        "schema.json",
+        "rules.md",
+    )
     no_history_logging["start_sync_execution"].assert_called_once()
     no_history_logging["complete_sync_execution"].assert_not_called()
     no_history_logging["fail_execution"].assert_called_once()
@@ -475,9 +301,7 @@ def test_run_workflow_error_preserves_form_values_and_logs_noncritical_failure(
 
 def test_run_history_failure_logging_remains_noncritical_for_workflow_errors(
     monkeypatch,
-    api_client,
-    valid_schema_bytes,
-    valid_rules_bytes,
+    post_run,
 ):
     monkeypatch.setattr(
         fastapi_app.HistoryService,
@@ -495,18 +319,15 @@ def test_run_history_failure_logging_remains_noncritical_for_workflow_errors(
         Mock(side_effect=RuntimeError("workflow failed")),
     )
 
-    response = api_client.post(
-        "/run",
-        data={
+    response = post_run(
+        {
             "flow": "rule_analysis",
             "sql_dialect": "PostgreSQL",
             "new_rule": "Rule #9: Use SUM(orders.revenue).",
-        },
-        files=upload_files(valid_schema_bytes, valid_rules_bytes),
+        }
     )
 
-    assert response.status_code == 200
-    assert "workflow failed" in response.text
+    assert_response_contains(response, "workflow failed")
     assert "history unavailable" not in response.text
 
 
@@ -567,5 +388,6 @@ def test_task_cancel_unknown_task_returns_404(monkeypatch, api_client):
     )
 
     response = api_client.post("/tasks/missing/cancel")
+
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
