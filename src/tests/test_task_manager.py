@@ -61,6 +61,11 @@ def test_get_status_returns_incremental_pages_for_polling():
     assert status["pages"] == ["<p>Rule #3</p>"]
     assert status["next_index"] == 3
 
+    status_after_known_results = manager.get_status("task-id", from_index=3)
+
+    assert status_after_known_results["pages"] == []
+    assert status_after_known_results["next_index"] == 3
+
 
 def test_run_all_rules_analysis_completes_with_mocked_rule_analysis(
     monkeypatch: pytest.MonkeyPatch,
@@ -108,6 +113,9 @@ def test_run_all_rules_analysis_respects_preexisting_cancellation(
     assert status["total_rules"] == 2
     assert status["completed_rules"] == 0
     assert status["pages"] == []
+    assert status["rules_text"] == analysis_context.rules_text
+    assert "orders" in status["schema_json"]
+    assert status["guidelines_text"]
     analyze_one.assert_not_called()
     no_history_writes["cancel_async_execution"].assert_called_once()
 
@@ -127,6 +135,29 @@ def test_run_all_rules_analysis_records_failure_without_real_llm(
     assert status["status"] == "failed"
     assert status["error"] == "boom"
     no_history_writes["fail_async_execution"].assert_called_once()
+
+
+def test_run_all_rules_analysis_failure_retains_partial_results(
+    monkeypatch: pytest.MonkeyPatch,
+    analysis_context: task_manager.AnalysisContext,
+    no_history_writes: dict[str, Mock],
+):
+    manager = manager_with_task()
+    monkeypatch.setattr(task_manager.settings, "MAX_CONCURRENT_RULE_ANALYSES", 1)
+    analyze_one = Mock(side_effect=["<p>first result</p>", RuntimeError("boom")])
+    monkeypatch.setattr(manager, "_analyze_one", analyze_one)
+
+    manager._run_all_rules_analysis("task-id", analysis_context)
+
+    status = manager.get_status("task-id")
+    assert status["status"] == "failed"
+    assert status["completed_rules"] == 1
+    assert status["pages"] == ["<p>first result</p>"]
+    assert status["next_index"] == 1
+    assert status["error"] == "boom"
+    no_history_writes["fail_async_execution"].assert_called_once()
+    _, fail_kwargs = no_history_writes["fail_async_execution"].call_args
+    assert fail_kwargs["partial_result_html"] == "<p>first result</p>"
 
 
 def test_history_write_failures_do_not_break_task_completion(

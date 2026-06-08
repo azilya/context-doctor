@@ -45,6 +45,17 @@ For the reload-enabled development server, run this from `src/`:
 ../start.sh
 ```
 
+## Testing
+
+Run automated checks from `src/`:
+
+```sh
+uv run pytest
+uv run ruff check .
+```
+
+Tests mock LLM-backed boundaries and do not require API credentials.
+
 ## Environment
 
 Copy `.env.example` to `.env` for local use and fill in values. Do not commit `.env`.

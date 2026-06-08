@@ -12,3 +12,12 @@ uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 
 ```
 
 Set `BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL` before running LLM-backed workflows. Upload schema JSON, rules text, and SQL dialect in the UI for each request.
+
+## Tests
+
+```sh
+uv run pytest
+uv run ruff check .
+```
+
+The automated suite mocks LLM-backed calls and does not require API credentials.

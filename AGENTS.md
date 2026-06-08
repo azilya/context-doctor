@@ -15,7 +15,7 @@
 - Production-style local server: from `src/`, run `uv run python -m uvicorn context_doctor.fastapi_app:app --host 0.0.0.0 --port 8000`.
 - Docker build from repo root: `docker build -t context-doctor .`; the Dockerfile copies `src/pyproject.toml`, `src/README.md`, and `src/context_doctor`, then runs `pip install .`.
 - Lint from `src/`: `uv run ruff check .`. Format with `uv run ruff format .`.
-- Automated tests live under `src/tests`; from `src/`, run `uv run pytest` and `uv run ruff check .` before handing off changes.
+- Automated tests live under `src/tests`; from `src/`, run `uv run pytest` and `uv run ruff check .` before handing off changes, and update `TEST_PLAN.md` when test coverage meaningfully changes.
 - LLM-backed calls must be mocked in tests; do not use real API credentials or allow live OpenAI-compatible traffic.
 - Prefer shared fixtures in `src/tests/conftest.py` for uploaded context, structured LLM response fakes, and history/task boundary mocks.
 - Keep `MAX_CONCURRENT_RULE_ANALYSES` deterministic and low in async tests, usually `1`, to avoid flaky ordering and avoid multiplying mocked external work.
