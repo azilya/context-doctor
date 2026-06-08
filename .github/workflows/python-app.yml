@@ -27,7 +27,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
       with:
-        enable-cache: true
+        enable-cache: false
 
     - name: Install the project
       run: uv sync --locked --all-extras --dev --directory=src
@@ -38,4 +38,4 @@ jobs:
         src: "./src"
 
     - name: Run tests
-      run: uv run pytest
+      run: uv run pytest src/tests
