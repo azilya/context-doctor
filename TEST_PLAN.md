@@ -2,11 +2,11 @@
 
 ## Current automated status
 
-- Automated tests live under `src/tests` and run from `src/` with `uv run pytest`.
+- Automated tests live under `tests` and run from the repository root with `uv run pytest`.
 - The suite is deterministic and does not require `BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, a live LLM endpoint, or a live web server.
-- LLM-backed boundaries are mocked or blocked by the shared fixture in `src/tests/conftest.py`; accidental OpenAI-compatible client creation fails the test.
+- LLM-backed boundaries are mocked or blocked by the shared fixture in `tests/conftest.py`; accidental OpenAI-compatible client creation fails the test.
 - Async all-rules tests set `MAX_CONCURRENT_RULE_ANALYSES` low, usually `1`, to keep ordering predictable.
-- Current verification target: `uv run pytest` and `uv run ruff check .` from `src/` before handoff.
+- Current verification target: `uv run pytest` and `uv run ruff check .` from the repository root before handoff.
 
 ## Covered fixtures and mocks
 
@@ -50,13 +50,13 @@
 
 - Live LLM smoke tests remain manual and should be run only deliberately with real credentials.
 - Browser-only behavior remains manual: file picker UX, copy buttons, collapsible sections, async polling DOM updates, stop button behavior, pagination controls, and history-detail delete redirect.
-- Production-style server and Docker checks remain manual: direct Uvicorn, `../start.sh`, Docker build/run, and environment-specific SQLite path behavior.
+- Production-style server and Docker checks remain manual: direct Uvicorn, `./start.sh`, Docker build/run, and environment-specific SQLite path behavior.
 - Future refactors should add or adjust tests before changing API routers, context persistence, frontend JavaScript extraction, or prompt output schemas.
 
 ## Recommended local setup and commands
 
-- From `src/`, install dependencies with `uv sync`.
-- From `src/`, run tests with `uv run pytest`.
-- From `src/`, run lint with `uv run ruff check .`.
+- From the repository root, install dependencies with `uv sync`.
+- From the repository root, run tests with `uv run pytest`.
+- From the repository root, run lint with `uv run ruff check .`.
 - Use `uv run ruff format .` only when formatting changes are needed.
-- For manual checks, start the dev server from `src/` with `../start.sh` and verify `/`, `/history`, all four workflows, async polling, cancellation, partial results, and history detail/delete behavior.
+- For manual checks, start the dev server from the repository root with `./start.sh` and verify `/`, `/history`, all four workflows, async polling, cancellation, partial results, and history detail/delete behavior.

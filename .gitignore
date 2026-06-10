@@ -8,7 +8,6 @@ __pycache__/
 .venv/
 venv/
 env/
-src/.venv/
 
 # Local environment and secrets
 .env

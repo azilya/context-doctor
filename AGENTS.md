@@ -2,22 +2,23 @@
 
 ## Repo Shape
 
-- Python package, `pyproject.toml`, `uv.lock`, `README.md`, templates, prompts, and examples live under `src/`; run uv/Uvicorn commands from `src/` unless noted.
+- `pyproject.toml`, `uv.lock`, `README.md`, tests, and project tooling live at the repository root.
+- Importable package code and package resources live under `src/context_doctor/`.
 - FastAPI entrypoint is `context_doctor.fastapi_app:app`.
 - Templates, prompts, guidelines, and examples are loaded package-relatively with `importlib.resources`.
 - `src/.venv/` may exist in the repo checkout; do not inspect or edit it as project source.
 
 ## Commands
 
-- Install dependencies: from `src/`, run `uv sync`.
-- Dev server: from `src/`, run `../start.sh`; it starts Uvicorn on `localhost:8008` with reload for Python, prompt YAML, and templates. Override with `HOST` or `PORT` if needed.
-- Direct local server: from `src/`, run `uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008`.
-- Production-style local server: from `src/`, run `uv run python -m uvicorn context_doctor.fastapi_app:app --host 0.0.0.0 --port 8000`.
-- Docker build from repo root: `docker build -t context-doctor .`; the Dockerfile copies `src/pyproject.toml`, `src/README.md`, and `src/context_doctor`, then runs `pip install .`.
-- Lint from `src/`: `uv run ruff check .`. Format with `uv run ruff format .`.
-- Automated tests live under `src/tests`; from `src/`, run `uv run pytest` and `uv run ruff check .` before handing off changes, and update `TEST_PLAN.md` when test coverage meaningfully changes.
+- Install dependencies from the repository root with `uv sync`.
+- Dev server: run `./start.sh` from the repository root; it starts Uvicorn on `localhost:8008` with reload for Python, prompt YAML, and templates. Override with `HOST` or `PORT` if needed.
+- Direct local server: `uv run python -m uvicorn context_doctor.fastapi_app:app --host localhost --port 8008`.
+- Production-style local server: `uv run python -m uvicorn context_doctor.fastapi_app:app --host 0.0.0.0 --port 8000`.
+- Docker build from repo root: `docker build -t context-doctor .`; the Dockerfile copies the root project metadata and `src/context_doctor`, then runs `pip install .`.
+- Lint from the repository root with `uv run ruff check .`. Format with `uv run ruff format .`.
+- Automated tests live under `tests`; run `uv run pytest` and `uv run ruff check .` before handing off changes, and update `TEST_PLAN.md` when test coverage meaningfully changes.
 - LLM-backed calls must be mocked in tests; do not use real API credentials or allow live OpenAI-compatible traffic.
-- Prefer shared fixtures in `src/tests/conftest.py` for uploaded context, structured LLM response fakes, and history/task boundary mocks.
+- Prefer shared fixtures in `tests/conftest.py` for uploaded context, structured LLM response fakes, and history/task boundary mocks.
 - Keep `MAX_CONCURRENT_RULE_ANALYSES` deterministic and low in async tests, usually `1`, to avoid flaky ordering and avoid multiplying mocked external work.
 
 ## Runtime Requirements

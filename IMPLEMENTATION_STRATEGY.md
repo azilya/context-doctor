@@ -25,19 +25,19 @@ Use these files as the canonical inputs for future implementation work:
 
 Follow the repo-specific guidance from `AGENTS.md`:
 
-- Run `uv` commands from `src/`.
+- Run `uv` commands from the repository root.
 - Use `uv run ruff check .` for linting.
 - Use `uv run ruff format .` for formatting.
-- Automated tests are configured under `src/tests`; run `uv run pytest` and `uv run ruff check .` from `src/` before handoff.
+- Automated tests are configured under `tests`; run `uv run pytest` and `uv run ruff check .` from the repository root before handoff.
 - Keep LLM-backed calls mocked in tests; the suite must not require real API credentials or OpenAI-compatible traffic.
-- The dev server is started from `src/` with `../start.sh`.
+- The dev server is started from the repository root with `./start.sh`.
 - Avoid editing `src/.venv/`.
 
 ## Priority order
 
 ### Phase 1: Build the test foundation
 
-**Status:** complete for the current stabilization pass. The project now has API, workflow-boundary, prompt-construction, formatting, context-ingestion, logic-dispatch, and async task-manager coverage in `src/tests`. The first test pass also included small production-file adjustments in `src/context_doctor/database/models.py`, `src/context_doctor/logic.py`, and `src/pyproject.toml`; keep those in mind when reviewing history because they support the testable contracts now in place.
+**Status:** complete for the current stabilization pass. The project now has API, workflow-boundary, prompt-construction, formatting, context-ingestion, logic-dispatch, and async task-manager coverage in `tests`. The first test pass also included small production-file adjustments in `src/context_doctor/database/models.py`, `src/context_doctor/logic.py`, and `pyproject.toml`; keep those in mind when reviewing history because they support the testable contracts now in place.
 
 **Why this comes first:** the codebase already has multiple flows, async task behavior, and non-critical failure handling. A broad test scaffold will make every later refactor safer and will expose current contracts before they drift.
 
@@ -57,8 +57,8 @@ Follow the repo-specific guidance from `AGENTS.md`:
 
 **Verification**
 
-- From `src/`: `uv run ruff check .`
-- From `src/`: `uv run pytest`
+- From the repository root: `uv run ruff check .`
+- From the repository root: `uv run pytest`
 - Manual checks from `TEST_PLAN.md`: `/`, `/history`, all four flows, async polling, cancellation, partial results.
 
 ### Phase 2: Harden async all-rules analysis and validation

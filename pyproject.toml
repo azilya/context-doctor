@@ -1,9 +1,10 @@
 [project]
 name = "context-doctor"
 version = "0.1.0"
-description = ""
+description = "A FastAPI demo for inspecting text-to-SQL rule context."
 authors = [{ name = "Ilya Azerkovich" }]
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.12"
 dependencies = [
     "pandas (>=2.3.3,<3.0.0)",
@@ -25,7 +26,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = ["context_doctor"]
-module-root = ""
+module-root = "src"
 
 [dependency-groups]
 dev = [
@@ -39,3 +40,4 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]

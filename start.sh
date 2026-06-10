@@ -8,4 +8,4 @@ export MAX_CONCURRENT_RULE_ANALYSES=${MAX_CONCURRENT_RULE_ANALYSES:-1}
 export HOST=${HOST:-localhost}
 export PORT=${PORT:-8008}
 
-exec uv run python -m uvicorn context_doctor.fastapi_app:app --host "$HOST" --port "$PORT" --reload --reload-include "context_doctor/prompts/*.yaml" --reload-include "context_doctor/templates/*.html"
+exec uv run python -m uvicorn context_doctor.fastapi_app:app --host "$HOST" --port "$PORT" --reload --reload-include "src/context_doctor/prompts/*.yaml" --reload-include "src/context_doctor/templates/*.html"

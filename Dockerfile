@@ -17,8 +17,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
-COPY src/pyproject.toml src/README.md /app/
-COPY src/context_doctor /app/context_doctor
+COPY pyproject.toml README.md LICENSE /app/
+COPY src/context_doctor /app/src/context_doctor
 
 # Upgrade pip and install the package (pyproject.toml defines dependencies)
 RUN python -m pip install --upgrade pip setuptools wheel \

@@ -20,7 +20,6 @@ Context Doctor is a small FastAPI demo for inspecting text-to-SQL rule context. 
 The app accepts schema JSON and rules text uploads for every analysis request. Sample files are included in the repository.
 
 ```sh
-cd src
 uv sync
 BASE_URL= \
 OPENAI_API_KEY= \
@@ -39,15 +38,15 @@ Use `PostgreSQL` as the sample SQL dialect.
 
 LLM-backed workflows require `BASE_URL`, `OPENAI_API_KEY`, and `OPENAI_MODEL`.
 
-For the reload-enabled development server, run this from `src/`:
+For the reload-enabled development server, run this from the repository root:
 
 ```sh
-../start.sh
+./start.sh
 ```
 
 ## Testing
 
-Run automated checks from `src/`:
+Run automated checks from the repository root:
 
 ```sh
 uv run pytest

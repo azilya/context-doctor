@@ -2,9 +2,7 @@
 .venv
 venv
 env
-src/.venv
 .ruff_cache
-src/.ruff_cache
 __pycache__
 *.pyc
 .env
