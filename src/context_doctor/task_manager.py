@@ -11,7 +11,7 @@ from . import settings
 from .context_store import AnalysisContext
 from .rule_analysis_flow import analyze_single_rule_pipeline, guidelines
 from .services.history_service import HistoryService
-from .utils import prettify_html
+from .utils import details_by_category, prettify_html
 
 
 @dataclass
@@ -221,7 +221,7 @@ class TaskManager:
         if self._is_empty_result(response):
             logging.debug("Empty result for rule analysis, skipping HTML generation")
             return None
-        response.loc[0, "Category"] = "analyzed_rule"
+        response[0]["Category"] = "analyzed_rule"
         return prettify_html(response)
 
     def _append_results(self, task_id: str, rule_index: int, html: str | None) -> None:
@@ -268,9 +268,10 @@ class TaskManager:
         return ["Rule #" + r for r in rules_lst if len(r) > 1]
 
     @staticmethod
-    def _is_empty_result(df) -> bool:
+    def _is_empty_result(rows) -> bool:
+        details = details_by_category(rows)
         return all(
-            not df.set_index("Category").loc[c, "Details"]
+            not details[c]
             for c in [
                 "typos",
                 "dialect_inconsistencies",

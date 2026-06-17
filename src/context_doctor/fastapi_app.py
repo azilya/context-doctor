@@ -3,7 +3,6 @@ import logging
 import time
 from importlib import resources
 
-import pandas as pd
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -153,10 +152,9 @@ async def run_analysis_view(
             # Calculate duration
             duration = time.time() - start_time
 
-            if isinstance(result, pd.DataFrame):
-                result_html = prettify_html(result)
-            else:
-                result_html = f"<pre>{result}</pre>"
+            result_html = (
+                prettify_html(result) if isinstance(result, list) else f"<pre>{result}</pre>"
+            )
 
             schema_json = json.dumps(schema_description, indent=2, ensure_ascii=False)
 

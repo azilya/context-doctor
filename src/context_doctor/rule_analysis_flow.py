@@ -2,12 +2,12 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-import pandas as pd
 from pydantic import BaseModel, Field
 
 from . import settings
 from .llm_client import parse_response
 from .package_resources import read_prompt_steps, read_text, render_prompt_messages
+from .utils import details_by_category, ordered_rows
 
 
 class CategoryResult(BaseModel):
@@ -75,7 +75,10 @@ def validate_rule_writing_guidelines(new_rule, guidelines=guidelines):
         guidelines=guidelines,
         new_rule=new_rule,
     )
-    response = parse_response(messages, RuleValidationResult).model_dump()
+    response = parse_response(messages, RuleValidationResult)
+    if not response:
+        raise ValueError("Response could not be parsed")
+    response = response.model_dump()
     response["violations"] = "\n".join(response["violations"])
     response["new_rule"] = new_rule
     return response
@@ -107,13 +110,13 @@ def analyze_rule_pipeline(
     new_rule, rules, dialect, descriptions, guidelines=guidelines
 ):
     first_step = compare_rules_and_descriptions(rules, dialect, descriptions, new_rule)
-    final_response = format_comparison_response(first_step)
+    formatted_response = format_comparison_response(first_step)
     second_step = validate_rule_writing_guidelines(new_rule, guidelines)
     second_step["guideline_violations"] = second_step.pop("violations")
     second_step["guideline_analysis_summary"] = second_step.pop("analysis_summary")
-    final_response.update(second_step)
-    final_response["new_rule"] = new_rule
-    final_response_df = beautify_result(final_response)
+    formatted_response.update(second_step)
+    formatted_response["new_rule"] = new_rule
+    final_response_df = beautify_result(formatted_response)
     # Also return the guidelines text so callers can display it in the UI
     return final_response_df, guidelines
 
@@ -151,7 +154,7 @@ def all_rules_pipeline(rules, dialect, descriptions, guidelines=guidelines):
         df
         for df in responses
         if not all(
-            df.set_index("Category").loc[c, "Details"] == ""
+            details_by_category(df)[c] == ""
             for c in [
                 "typos",
                 "dialect_inconsistencies",
@@ -167,17 +170,14 @@ def all_rules_pipeline(rules, dialect, descriptions, guidelines=guidelines):
     ]
     logging.info(f"Filtered out {len(responses) - len(filtered_responses)} rules")
     for df in filtered_responses:
-        df.loc[0, "Category"] = "analyzed_rule"
+        df[0]["Category"] = "analyzed_rule"
     return filtered_responses, guidelines
 
 
-def beautify_result(result) -> pd.DataFrame:
-    beautified = [(k, v) for k, v in result.items()]
-    b_df = pd.DataFrame(beautified, columns=["Category", "Details"])
-    b_df = (
-        b_df
-        .set_index("Category")
-        .reindex([
+def beautify_result(result) -> list[dict[str, str]]:
+    return ordered_rows(
+        result,
+        [
             "new_rule",
             "typos",
             "dialect_inconsistencies",
@@ -190,7 +190,5 @@ def beautify_result(result) -> pd.DataFrame:
             "guideline_violations",
             "comparison_analysis_summary",
             "guideline_analysis_summary",
-        ])
-        .reset_index()
+        ],
     )
-    return b_df

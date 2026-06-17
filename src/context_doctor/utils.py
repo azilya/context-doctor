@@ -8,18 +8,32 @@ def to_title_case(s):
     return " ".join(x.capitalize() for x in parts)
 
 
-def prettify_html(entry):
-    if "Category" in entry.columns:
-        entry["Category"] = entry["Category"].apply(to_title_case)
-    df = entry.map(
-        lambda x: (
-            escape(x).replace("\r", "").replace("\n", "<br>")
-            if isinstance(x, str)
-            else x
-        )
+def ordered_rows(result, order):
+    return [{"Category": key, "Details": result.get(key, "")} for key in order]
+
+
+def details_by_category(rows):
+    return {row["Category"]: row["Details"] for row in rows}
+
+
+def _html_cell(value):
+    return escape(str(value)).replace("\r", "").replace("\n", "<br>")
+
+
+def prettify_html(rows):
+    table_body = "\n".join(
+        "<tr>"
+        f"<td>{_html_cell(to_title_case(row['Category']))}</td>"
+        f"<td>{_html_cell(row['Details'])}</td>"
+        "</tr>"
+        for row in rows
     )
-    df_html = df.to_html(index=False, escape=False)
-    return df_html
+    return (
+        '<table class="analysis-result-table">\n'
+        "<thead><tr><th>Category</th><th>Details</th></tr></thead>\n"
+        f"<tbody>\n{table_body}\n</tbody>\n"
+        "</table>"
+    )
 
 
 def simplify_description(schema):

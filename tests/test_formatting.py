@@ -1,16 +1,19 @@
 from unittest.mock import Mock
 
-import pandas as pd
-
 from context_doctor import (
     question_analysis_flow,
     rule_analysis_flow,
     rule_generation_flow,
 )
+from context_doctor.utils import prettify_html
 
 
-def details_by_category(dataframe):
-    return dict(zip(dataframe["Category"], dataframe["Details"], strict=True))
+def details_by_category(rows):
+    return {row["Category"]: row["Details"] for row in rows}
+
+
+def categories(rows):
+    return [row["Category"] for row in rows]
 
 
 def test_rule_analysis_format_comparison_response_joins_nested_fields(
@@ -48,9 +51,9 @@ def test_rule_analysis_beautify_result_has_stable_category_order():
         "guideline_violations": "",
     }
 
-    dataframe = rule_analysis_flow.beautify_result(result)
+    rows = rule_analysis_flow.beautify_result(result)
 
-    assert dataframe["Category"].tolist() == [
+    assert categories(rows) == [
         "new_rule",
         "typos",
         "dialect_inconsistencies",
@@ -64,7 +67,7 @@ def test_rule_analysis_beautify_result_has_stable_category_order():
         "comparison_analysis_summary",
         "guideline_analysis_summary",
     ]
-    assert details_by_category(dataframe)["duplications_explained"] == "Duplicate"
+    assert details_by_category(rows)["duplications_explained"] == "Duplicate"
 
 
 def test_question_formatting_joins_lists_and_descriptions(
@@ -96,7 +99,7 @@ def test_question_formatting_joins_lists_and_descriptions(
 
 
 def test_question_beautify_result_has_stable_category_order():
-    dataframe = question_analysis_flow.beautify_result({
+    rows = question_analysis_flow.beautify_result({
         "comparison_analysis_summary": "Comparison summary",
         "filtering_analysis_summary": "Filtering summary",
         "question": "Question?",
@@ -108,7 +111,7 @@ def test_question_beautify_result_has_stable_category_order():
         "duplications": "",
     })
 
-    assert dataframe["Category"].tolist() == [
+    assert categories(rows) == [
         "question",
         "relevant_rules",
         "relevant_descriptions",
@@ -126,23 +129,20 @@ def test_rule_generation_pipeline_reorders_generation_summary(
     rule_suggestion_response,
     analysis_context,
 ):
-    base_rule_eval = pd.DataFrame(
-        [
-            ["new_rule", rule_suggestion_response.suggested_rule],
-            ["typos", ""],
-            ["dialect_inconsistencies", ""],
-            ["contradictions_explained", ""],
-            ["contradictions_with_rules", ""],
-            ["contradictions_with_schema", ""],
-            ["duplications_explained", ""],
-            ["duplications_with_rules", ""],
-            ["duplications_with_schema", ""],
-            ["guideline_violations", ""],
-            ["comparison_analysis_summary", "Comparison summary"],
-            ["guideline_analysis_summary", "Guideline summary"],
-        ],
-        columns=["Category", "Details"],
-    )
+    base_rule_eval = [
+        {"Category": "new_rule", "Details": rule_suggestion_response.suggested_rule},
+        {"Category": "typos", "Details": ""},
+        {"Category": "dialect_inconsistencies", "Details": ""},
+        {"Category": "contradictions_explained", "Details": ""},
+        {"Category": "contradictions_with_rules", "Details": ""},
+        {"Category": "contradictions_with_schema", "Details": ""},
+        {"Category": "duplications_explained", "Details": ""},
+        {"Category": "duplications_with_rules", "Details": ""},
+        {"Category": "duplications_with_schema", "Details": ""},
+        {"Category": "guideline_violations", "Details": ""},
+        {"Category": "comparison_analysis_summary", "Details": "Comparison summary"},
+        {"Category": "guideline_analysis_summary", "Details": "Guideline summary"},
+    ]
     generate_rule_suggestion = Mock(return_value=rule_suggestion_response)
     analyze_rule_pipeline = Mock(return_value=(base_rule_eval, "GUIDELINES"))
     monkeypatch.setattr(
@@ -152,7 +152,7 @@ def test_rule_generation_pipeline_reorders_generation_summary(
         rule_generation_flow, "analyze_rule_pipeline", analyze_rule_pipeline
     )
 
-    dataframe, guidelines = rule_generation_flow.generate_rule_pipeline(
+    rows, guidelines = rule_generation_flow.generate_rule_pipeline(
         analysis_context.rules_text,
         analysis_context.schema_description,
         "",
@@ -161,7 +161,7 @@ def test_rule_generation_pipeline_reorders_generation_summary(
     )
 
     assert guidelines == "GUIDELINES"
-    assert dataframe["Category"].tolist() == [
+    assert categories(rows) == [
         "new_rule",
         "typos",
         "dialect_inconsistencies",
@@ -176,7 +176,7 @@ def test_rule_generation_pipeline_reorders_generation_summary(
         "comparison_analysis_summary",
         "guideline_analysis_summary",
     ]
-    assert details_by_category(dataframe)["generation_analysis_summary"] == (
+    assert details_by_category(rows)["generation_analysis_summary"] == (
         "A revenue aggregation rule solves the problem."
     )
     generate_rule_suggestion.assert_called_once_with(
@@ -192,3 +192,15 @@ def test_rule_generation_pipeline_reorders_generation_summary(
         analysis_context.sql_dialect,
         analysis_context.schema_description,
     )
+
+
+def test_prettify_html_escapes_values_and_preserves_newlines():
+    html = prettify_html([
+        {"Category": "new_rule", "Details": "<script>x</script>\nnext"},
+    ])
+
+    assert '<table class="analysis-result-table">' in html
+    assert "border=" not in html
+    assert "<th>Category</th>" in html
+    assert "<td>New Rule</td>" in html
+    assert "&lt;script&gt;x&lt;/script&gt;<br>next" in html

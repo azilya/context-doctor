@@ -8,6 +8,7 @@ from .question_analysis_flow import (
 from .llm_client import parse_response
 from .package_resources import read_prompt_steps, render_prompt_messages
 from .rule_analysis_flow import analyze_rule_pipeline, guidelines
+from .utils import details_by_category, ordered_rows
 
 
 class RuleSuggestion(BaseModel):
@@ -60,14 +61,11 @@ def generate_rule_pipeline(rules, descriptions, question, problem, dialect):
     )
 
     # add generation analysis summary to final result and reorder
-    rule_eval.loc[len(rule_eval)] = [
-        "generation_analysis_summary",
-        rule_suggestion.analysis_summary,
-    ]
-    rule_eval = (
-        rule_eval
-        .set_index("Category")
-        .reindex([
+    result = details_by_category(rule_eval)
+    result["generation_analysis_summary"] = rule_suggestion.analysis_summary
+    rule_eval = ordered_rows(
+        result,
+        [
             "new_rule",
             "typos",
             "dialect_inconsistencies",
@@ -81,8 +79,7 @@ def generate_rule_pipeline(rules, descriptions, question, problem, dialect):
             "generation_analysis_summary",
             "comparison_analysis_summary",
             "guideline_analysis_summary",
-        ])
-        .reset_index()
+        ],
     )
 
     return rule_eval, guidelines

@@ -1,6 +1,5 @@
 from unittest.mock import Mock
 
-import pandas as pd
 import pytest
 
 from context_doctor import task_manager
@@ -87,20 +86,17 @@ def test_joined_results_returns_ordered_non_empty_html():
 
 def test_analyze_one_skips_empty_results(monkeypatch: pytest.MonkeyPatch):
     manager = TaskManager()
-    empty_result = pd.DataFrame(
-        [
-            ["typos", ""],
-            ["dialect_inconsistencies", ""],
-            ["contradictions_explained", ""],
-            ["contradictions_with_rules", ""],
-            ["contradictions_with_schema", ""],
-            ["duplications_explained", ""],
-            ["duplications_with_rules", ""],
-            ["duplications_with_schema", ""],
-            ["guideline_violations", ""],
-        ],
-        columns=["Category", "Details"],
-    )
+    empty_result = [
+        {"Category": "typos", "Details": ""},
+        {"Category": "dialect_inconsistencies", "Details": ""},
+        {"Category": "contradictions_explained", "Details": ""},
+        {"Category": "contradictions_with_rules", "Details": ""},
+        {"Category": "contradictions_with_schema", "Details": ""},
+        {"Category": "duplications_explained", "Details": ""},
+        {"Category": "duplications_with_rules", "Details": ""},
+        {"Category": "duplications_with_schema", "Details": ""},
+        {"Category": "guideline_violations", "Details": ""},
+    ]
     analyze_single_rule_pipeline = Mock(return_value=empty_result)
     prettify_html = Mock(side_effect=AssertionError("empty results should not render HTML"))
     monkeypatch.setattr(

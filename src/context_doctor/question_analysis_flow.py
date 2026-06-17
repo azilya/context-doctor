@@ -1,8 +1,8 @@
-import pandas as pd
 from pydantic import BaseModel, Field
 
 from .llm_client import parse_response
 from .package_resources import read_prompt_steps, render_prompt_messages
+from .utils import ordered_rows
 
 
 class QuestionAnalysis(BaseModel):
@@ -107,14 +107,10 @@ def filter_and_compare_question(question, rules, dialect, descriptions):
     return result_df
 
 
-def beautify_result(result) -> pd.DataFrame:
-    beautified = [(k, v) for k, v in result.items()]
-    b_df = pd.DataFrame(beautified)
-    b_df.columns = ["Category", "Details"]
-    b_df = (
-        b_df
-        .set_index("Category")
-        .reindex([
+def beautify_result(result) -> list[dict[str, str]]:
+    return ordered_rows(
+        result,
+        [
             "question",
             "relevant_rules",
             "relevant_descriptions",
@@ -124,10 +120,8 @@ def beautify_result(result) -> pd.DataFrame:
             "duplications",
             "filtering_analysis_summary",
             "comparison_analysis_summary",
-        ])
-        .reset_index()
+        ],
     )
-    return b_df
 
 
 def format_filtering_result(filter_result):
