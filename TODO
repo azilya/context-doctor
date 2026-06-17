@@ -8,6 +8,14 @@
 - Add functional tests for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis` workflows.
 - Document local test setup, recommended test commands, and the manual checklist in `TEST_PLAN.md`.
 
+## API and flow refactor
+
+- Split API endpoints into routers.
+- Move API routes under `/api` endpoints.
+- Add error propagation for empty response: empty structure + error text
+- Rework single rule analysis to use the task manager
+- Move analysis flows into a dedicated flows folder.
+
 ## Context caching
 
 - Rename/refactor `ContextStore` into `ContextService` in `context_doctor/services/context_service.py`.
@@ -27,6 +35,7 @@
 ## Frontend JavaScript extraction
 
 - Create `context_doctor/static/index.js` as the package static JS entrypoint.
+- Fully move table generation from utils to JS.
 - Serve package static assets through FastAPI and load the entrypoint from Jinja.
 - Move inline JavaScript into small modules/functions.
 - Keep templates focused on markup, Jinja-provided data, and data attributes.
@@ -40,9 +49,3 @@
 - Move away from prompt-based workflows to actual agentic
 - Tools to add:
   - Check that SQL dialect documentation is valid and current.
-
-## API and flow refactor
-
-- Split OpenAPI/API endpoints into routers.
-- Move API routes under `/api` endpoints.
-- Move analysis flows into a dedicated flows folder.
