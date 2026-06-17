@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from . import settings
 from .llm_client import parse_response
-from .package_resources import read_prompt_steps, read_text
+from .package_resources import read_prompt_steps, read_text, render_prompt_messages
 
 
 class CategoryResult(BaseModel):
@@ -59,47 +59,26 @@ guidelines = read_text("context_doctor.guidelines", "guidelines.md")
 
 
 def compare_rules_and_descriptions(rules, dialect, descriptions, new_rule):
-    messages = []
-    for i, val in enumerate(conflict_detection_prompt):
-        messages.append({
-            "role": val["role"],
-            "content": val["content"].format(
-                list_of_rules=rules,
-                db_dialect=dialect,
-                schema_descriptions=descriptions,
-                new_rule=new_rule,
-            ),
-        })
+    messages = render_prompt_messages(
+        conflict_detection_prompt,
+        list_of_rules=rules,
+        db_dialect=dialect,
+        schema_descriptions=descriptions,
+        new_rule=new_rule,
+    )
     return parse_response(messages, AcceptNewRule)
 
 
 def validate_rule_writing_guidelines(new_rule, guidelines=guidelines):
-    messages = []
-    for i, val in enumerate(validation_prompt):
-        messages.append({
-            "role": val["role"],
-            "content": val["content"].format(
-                guidelines=guidelines,
-                new_rule=new_rule,
-            ),
-        })
+    messages = render_prompt_messages(
+        validation_prompt,
+        guidelines=guidelines,
+        new_rule=new_rule,
+    )
     response = parse_response(messages, RuleValidationResult).model_dump()
     response["violations"] = "\n".join(response["violations"])
     response["new_rule"] = new_rule
     return response
-
-
-def compare_one_rule_for_run(rules, dialect, descriptions, new_rule, i):
-    response = compare_rules_and_descriptions(
-        rules,
-        dialect,
-        descriptions,
-        new_rule,
-    )
-    response_df = format_comparison_response(response)
-    response_df["run"] = i
-    response_df["new_rule"] = new_rule
-    return response_df
 
 
 def format_comparison_response(response):

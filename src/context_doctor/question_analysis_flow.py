@@ -2,7 +2,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from .llm_client import parse_response
-from .package_resources import read_prompt_steps
+from .package_resources import read_prompt_steps, render_prompt_messages
 
 
 class QuestionAnalysis(BaseModel):
@@ -58,31 +58,23 @@ filter_context_prompt = read_prompt_steps("prompt_template_question_filtering.ya
 
 
 def filter_relevant_rules_and_descriptions(rules, descriptions, question):
-    messages = []
-    for i, val in enumerate(filter_context_prompt):
-        messages.append({
-            "role": val["role"],
-            "content": val["content"].format(
-                rules=rules,
-                descriptions=descriptions,
-                question=question,
-            ),
-        })
+    messages = render_prompt_messages(
+        filter_context_prompt,
+        rules=rules,
+        descriptions=descriptions,
+        question=question,
+    )
     return parse_response(messages, RelevantContext)
 
 
 def compare_rules_and_descriptions(rules, dialect, descriptions, new_rule):
-    messages = []
-    for i, val in enumerate(conflict_detection_prompt):
-        messages.append({
-            "role": val["role"],
-            "content": val["content"].format(
-                list_of_rules=rules,
-                db_dialect=dialect,
-                schema_descriptions=descriptions,
-                new_rule=new_rule,
-            ),
-        })
+    messages = render_prompt_messages(
+        conflict_detection_prompt,
+        list_of_rules=rules,
+        db_dialect=dialect,
+        schema_descriptions=descriptions,
+        new_rule=new_rule,
+    )
     return parse_response(messages, QuestionAnalysis)
 
 

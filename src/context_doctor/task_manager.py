@@ -163,23 +163,7 @@ class TaskManager:
             if self._is_cancelled(task_id):
                 self._set_status(task_id, status="cancelled")
 
-                # Collect partial results before logging cancellation
-                partial_html = ""
-                try:
-                    with self._lock:
-                        state = self._tasks.get(task_id)
-                        if state and state.results:
-                            ordered_results = sorted(state.results.items())
-                            partial_html = "".join([
-                                html for _, html in ordered_results if html
-                            ])
-                            logging.info(
-                                f"Collected {len(state.results)} partial results for cancelled task {task_id}"
-                            )
-                except Exception as collect_err:
-                    logging.exception(
-                        f"Failed to collect partial results: {collect_err}"
-                    )
+                partial_html = self._joined_results(task_id)
 
                 # Log cancellation to history with partial results (non-blocking)
                 try:
@@ -198,19 +182,10 @@ class TaskManager:
                 # Log completion to history (non-blocking)
                 try:
                     duration = time.time() - start_time
-                    # Collect all result HTML pages
-                    with self._lock:
-                        state = self._tasks.get(task_id)
-                        if state:
-                            ordered_results = sorted(state.results.items())
-                            all_html = "".join([
-                                html for _, html in ordered_results if html
-                            ])
-                        else:
-                            all_html = ""
-
                     HistoryService.complete_async_execution(
-                        task_id=task_id, result_html=all_html, duration_seconds=duration
+                        task_id=task_id,
+                        result_html=self._joined_results(task_id),
+                        duration_seconds=duration,
                     )
                 except Exception:
                     logging.exception(
@@ -221,20 +196,7 @@ class TaskManager:
             self._set_status(task_id, status="failed", error=str(exc))
 
             # Collect partial results before logging failure
-            partial_html = ""
-            try:
-                with self._lock:
-                    state = self._tasks.get(task_id)
-                    if state and state.results:
-                        ordered_results = sorted(state.results.items())
-                        partial_html = "".join([
-                            html for _, html in ordered_results if html
-                        ])
-                        logging.info(
-                            f"Collected {len(state.results)} partial results for failed task {task_id}"
-                        )
-            except Exception as collect_err:
-                logging.exception(f"Failed to collect partial results: {collect_err}")
+            partial_html = self._joined_results(task_id)
 
             # Log failure to history with partial results (non-blocking)
             try:
@@ -292,6 +254,13 @@ class TaskManager:
         with self._lock:
             state = self._tasks.get(task_id)
             return bool(state and state.cancelled)
+
+    def _joined_results(self, task_id: str) -> str:
+        with self._lock:
+            state = self._tasks.get(task_id)
+            if not state:
+                return ""
+            return "".join(html for _, html in sorted(state.results.items()) if html)
 
     @staticmethod
     def _split_rules(rules: str) -> list[str]:

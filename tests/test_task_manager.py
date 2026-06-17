@@ -74,6 +74,17 @@ def test_get_status_returns_incremental_pages_for_polling():
     assert status_after_known_results["next_index"] == 3
 
 
+def test_joined_results_returns_ordered_non_empty_html():
+    manager = manager_with_task()
+    manager._tasks["task-id"].results = {
+        2: "<p>third</p>",
+        0: "<p>first</p>",
+        1: None,
+    }
+
+    assert manager._joined_results("task-id") == "<p>first</p><p>third</p>"
+
+
 def test_analyze_one_skips_empty_results(monkeypatch: pytest.MonkeyPatch):
     manager = TaskManager()
     empty_result = pd.DataFrame(

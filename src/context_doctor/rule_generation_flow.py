@@ -6,7 +6,7 @@ from .question_analysis_flow import (
     filter_relevant_rules_and_descriptions,
 )
 from .llm_client import parse_response
-from .package_resources import read_prompt_steps
+from .package_resources import read_prompt_steps, render_prompt_messages
 from .rule_analysis_flow import analyze_rule_pipeline, guidelines
 
 
@@ -22,29 +22,16 @@ class RuleSuggestion(BaseModel):
 rule_generation_prompt = read_prompt_steps("prompt_template_rule_generation.yaml")
 
 
-def generate_rule_suggestion(
-    rules, descriptions, dialect, question, problem, feedback=None
-):
-    messages = []
-    for i, val in enumerate(rule_generation_prompt):
-        messages.append({
-            "role": val["role"],
-            "content": val["content"].format(
-                rules=rules,
-                descriptions=descriptions,
-                dialect=dialect,
-                question=question,
-                problem=problem,
-                guidelines=guidelines,
-            ),
-        })
-    # if feedback and isinstance(feedback, pd.DataFrame):
-    #     messages.append(
-    #         {
-    #             "role": "user",
-    #             "content": f"Here is your previous suggestion and feedback on it:\n{feedback.to_markdown(index=False)}",
-    #         }
-    #     )
+def generate_rule_suggestion(rules, descriptions, dialect, question, problem):
+    messages = render_prompt_messages(
+        rule_generation_prompt,
+        rules=rules,
+        descriptions=descriptions,
+        dialect=dialect,
+        question=question,
+        problem=problem,
+        guidelines=guidelines,
+    )
     return parse_response(messages, RuleSuggestion)
 
 
