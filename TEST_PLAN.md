@@ -1,62 +1,40 @@
 # TEST_PLAN.md
 
-## Current automated status
+## Automated Test Status
 
-- Automated tests live under `tests` and run from the repository root with `uv run pytest`.
-- The suite is deterministic and does not require `BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, a live LLM endpoint, or a live web server.
-- LLM-backed boundaries are mocked or blocked by the shared fixture in `tests/conftest.py`; accidental OpenAI-compatible client creation fails the test.
-- Async all-rules tests set `MAX_CONCURRENT_RULE_ANALYSES` low, usually `1`, to keep ordering predictable.
-- Current verification target: `uv run pytest` and `uv run ruff check .` from the repository root before handoff.
+- Unit suite - completed: needed low-level coverage for context parsing, prompt construction, result formatting, dispatch, async task state, and non-critical history behavior; implemented under `tests/unit`.
+- Functional suite - completed: needed app-boundary coverage for existing workflows and HTTP route contracts; implemented under `tests/functional` with FastAPI `TestClient` and deterministic LLM/task/history fakes.
+- Verification - completed: `uv run pytest` and `uv run ruff check .` are the handoff gates.
+- Live dependencies - completed: tests do not require `BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`, a live LLM endpoint, or a live web server.
 
-## Covered fixtures and mocks
+## Completed Test Suites
 
-- Valid uploaded schema JSON exercises application, table, column, relation, and normalized description handling.
-- Invalid schema cases cover missing bytes, malformed JSON, non-object JSON, missing required shape, and non-UTF-8 bytes.
-- Rules fixtures cover multiple well-formed `Rule #` headings, empty content, whitespace-only content, malformed headings, leading text, and single-rule input.
-- SQL dialect fixtures include `PostgreSQL` plus blank/whitespace boundary checks.
-- Uploaded context, SQL dialect, generated-rule, and structured Pydantic LLM responses are shared in fixtures; flow-specific question and problem values stay close to the tests that use them.
-- History and task boundaries are mocked so tests assert side effects without persistent database dependence.
+### `tests/unit` - completed
 
-## Covered unit foundations
+- Context ingestion - needed schema/rules/dialect validation; implemented `ContextStore.from_uploads` tests for valid JSON, invalid JSON, non-object JSON, missing schema shape, non-UTF-8 bytes, empty rules, blank dialect, filenames, raw schema, and normalized descriptions.
+- Rule splitting - needed deterministic all-rules boundaries; implemented `TaskManager._split_rules` tests for valid headings, malformed headings, leading text, single-rule text, empty input, and whitespace input.
+- Prompt contracts - needed stable prompt inputs for LLM-backed flows; implemented mocked `parse_response` tests for rule analysis, question analysis, and rule generation prompts.
+- Result contracts - needed stable UI/history row data; implemented formatting tests for category order, joined lists, nested comparison fields, generated-rule summary placement, HTML escaping, and newline handling.
+- Flow dispatch - needed stable `logic.run_analysis()` behavior; implemented dispatch tests for all four flows plus required-input and unknown-flow errors.
+- Async task manager - needed stable all-rules lifecycle behavior; implemented pending/running/completed/failed/cancelled, cancellation, partial-result, `next_index`, empty-result, and non-critical history failure tests.
 
-- `ContextStore.from_uploads` and context building: valid JSON, UTF-8 decoding, required schema shape, non-empty rules, required SQL dialect, filenames, raw schema, and normalized schema description.
-- `TaskManager._split_rules`: multiple `Rule #` headings, leading text, malformed headings, single-rule input, empty input, and whitespace-only input. Current imperfect splitter behavior is intentionally pinned.
-- Prompt construction in rule analysis, question analysis, and rule generation by mocking `parse_response` and asserting prompt variables include rules, schema descriptions, SQL dialect, questions, problems, guidelines, and generated rules.
-- Result formatting in rule analysis, question analysis, and rule generation, including category order, joined list fields, nested comparison fields, summaries, and generated-rule summary placement.
-- `logic.run_analysis` dispatch for all four flows plus missing required inputs, optional rule-generation question text, and unknown flows.
-- `TaskManager` pending/running/completed/failed/cancelled transitions, cancellation checks, partial-result retention, `from_index`/`next_index`, skipped empty analyses, and non-critical history write failures.
+### `tests/functional` - completed
 
-## Covered API and workflow checks
+- Main app routes - needed browser-facing route contracts; implemented `GET /`, `/history`, `/history/{entry_id}`, `/api/history/stats`, and `DELETE /api/history/{entry_id}` tests.
+- Run endpoint - needed form submission coverage; implemented `POST /run` tests for synchronous workflows, all-rules task startup, validation errors, workflow errors, and non-critical history logging failures.
+- API aliases - needed migration-safe endpoint coverage; implemented `/api/run`, `/api/tasks/{task_id}`, and `/api/tasks/{task_id}/cancel` success and 404 checks while legacy paths remain active.
+- Workflow smoke tests - needed functional coverage for existing Context Doctor workflows; implemented real FastAPI form submissions with deterministic structured LLM fakes for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis`.
+- Task polling/cancellation - needed async client contract coverage; implemented incremental payload, `next_index`, context field, cancellation, and unknown-task checks.
 
-- `GET /` renders the main application shell and workflow form.
-- `GET /history` covers repository arguments, filters, pagination offset, empty state, statistics, and repository error fallback.
-- `GET /history/{entry_id}` covers detail rendering and 404 for missing entries using repository/session mocks.
-- `GET /api/history/stats` covers statistics JSON through the repository boundary.
-- `DELETE /api/history/{entry_id}` covers success and 404 paths through the repository boundary.
-- `POST /run` synchronous flows cover rule analysis, question analysis, and rule generation rendering with mocked workflow execution, preserved form values, uploaded context, and non-critical history completion.
-- `POST /run` all-rules flow covers async task startup, polling-state rendering, a valid `AnalysisContext` passed to `TaskManager`, and expected `HistoryService.start_async_execution` payload.
-- `GET /tasks/{task_id}` covers incremental payloads, context fields, `next_index`, and 404 for unknown task IDs.
-- `POST /tasks/{task_id}/cancel` covers successful cancellation payloads and 404 for unknown task IDs.
-- Workflow error handling covers visible errors, preserved form values, and non-critical history failure logging.
+## Deferred Checks
 
-## Covered error handling
+- Browser-only automation - deferred: Playwright is not needed for current workflow coverage; add it only when testing browser-only behavior such as file picker labels, flow field switching, copy buttons, collapsibles, async DOM polling, stop/cancel UI, pagination/goto, or history-detail delete redirects.
+- Live LLM smoke tests - deferred: run only deliberately with real credentials.
+- Production-style runtime checks - deferred: direct Uvicorn, `./start.sh`, Docker build/run, and environment-specific SQLite path behavior remain manual.
 
-- Invalid schema JSON, missing schema upload, missing rules upload, empty rules text, and blank SQL dialect render user-visible errors and do not call analysis/task boundaries.
-- Missing new rule, missing question, missing problem, and unknown flow fail fast through `logic.run_analysis`; LLM-backed flow helpers are asserted not called.
-- LLM parse/workflow failures are simulated without live traffic; the error remains visible, form values are preserved, and history failure logging remains non-critical.
-- Sync failure logging and async progress/completion write errors remain non-critical where explicitly exercised; cancellation and failure side effects are asserted through mocked history boundaries.
+## Local Commands
 
-## Manual or deferred checks
-
-- Live LLM smoke tests remain manual and should be run only deliberately with real credentials.
-- Browser-only behavior remains manual: file picker UX, copy buttons, collapsible sections, async polling DOM updates, stop button behavior, pagination controls, and history-detail delete redirect.
-- Production-style server and Docker checks remain manual: direct Uvicorn, `./start.sh`, Docker build/run, and environment-specific SQLite path behavior.
-- Future refactors should add or adjust tests before changing API routers, context persistence, frontend JavaScript extraction, or prompt output schemas.
-
-## Recommended local setup and commands
-
-- From the repository root, install dependencies with `uv sync`.
-- From the repository root, run tests with `uv run pytest`.
-- From the repository root, run lint with `uv run ruff check .`.
-- Use `uv run ruff format .` only when formatting changes are needed.
-- For manual checks, start the dev server from the repository root with `./start.sh` and verify `/`, `/history`, all four workflows, async polling, cancellation, partial results, and history detail/delete behavior.
+- Install dependencies: `uv sync`.
+- Run tests: `uv run pytest`.
+- Run lint: `uv run ruff check .`.
+- Format when needed: `uv run ruff format .`.

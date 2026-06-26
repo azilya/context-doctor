@@ -1,228 +1,80 @@
 # Implementation Strategy
 
-## Executive summary
+## Current State
 
-The repository is in a good place for a disciplined follow-up pass: the current code paths are understandable, the major product workflows are present, the test foundation is broad, and result rendering no longer depends on pandas. The best order from here is: finish the remaining async/manual hardening checks, then split API and flow structure, then tackle context caching, and only after that extract frontend JavaScript.
+Context Doctor has deterministic unit and functional coverage for the existing workflows, route contracts, prompt/result contracts, async all-rules behavior, and history failure isolation. This is enough preparation to continue Phase 4 API and flow refactoring without adding more test infrastructure first.
 
-This document is meant to be durable: use it as the standing reference for what to do next, what to avoid starting too early, and how to verify progress without guessing.
+## Source Of Truth
 
-## Source of truth
+- `TODO` - active roadmap items.
+- `TEST_PLAN.md` - current automated and deferred test coverage.
+- `AGENTS.md` - repository commands, constraints, and runtime notes.
+- `src/context_doctor/fastapi_app.py` and `src/context_doctor/routers/*` - HTTP entrypoints and route wiring.
+- `src/context_doctor/logic.py` - flow dispatch and required-input validation.
+- `src/context_doctor/context_store.py` - context ingestion and normalization.
+- `src/context_doctor/task_manager.py` - async all-rules orchestration, cancellation, and partial results.
+- `src/context_doctor/rule_analysis_flow.py`, `src/context_doctor/question_analysis_flow.py`, `src/context_doctor/rule_generation_flow.py` - prompt construction and result shaping.
+- `src/context_doctor/services/history_service.py` and `src/context_doctor/database/*` - history persistence and failure isolation.
+- `src/context_doctor/templates/*` - current browser UI contracts.
 
-Use these files as the canonical inputs for future implementation work:
+## Working Constraints
 
-- `TODO` — roadmap source referenced in prior analysis.
-- `TEST_PLAN.md` — current testing strategy and manual verification checklist.
-- `AGENTS.md` — repository constraints, command locations, runtime notes, and workflow boundaries.
-- `src/context_doctor/fastapi_app.py` — HTTP entrypoints and current request/response wiring.
-- `src/context_doctor/logic.py` — flow dispatch and required input validation.
-- `src/context_doctor/context_store.py` — context ingestion and normalization.
-- `src/context_doctor/task_manager.py` — async all-rules orchestration, cancellation, and partial-result handling.
-- `src/context_doctor/rule_analysis_flow.py`, `src/context_doctor/question_analysis_flow.py`, `src/context_doctor/rule_generation_flow.py` — prompt construction and result shaping.
-- `src/context_doctor/utils.py` — row-list result helpers, HTML escaping, and table markup generation.
-- `src/context_doctor/services/history_service.py` and `src/context_doctor/database/*` — history persistence and failure isolation.
-- `src/context_doctor/templates/index.html`, `src/context_doctor/templates/history.html`, `src/context_doctor/templates/history_detail.html` — current UI surfaces and data contracts.
-
-## Working constraints
-
-Follow the repo-specific guidance from `AGENTS.md`:
-
-- Run `uv` commands from the repository root.
-- Use `uv run ruff check .` for linting.
-- Use `uv run ruff format .` for formatting.
-- Automated tests are configured under `tests`; run `uv run pytest` and `uv run ruff check .` from the repository root before handoff.
-- Keep LLM-backed calls mocked in tests; the suite must not require real API credentials or OpenAI-compatible traffic.
-- The dev server is started from the repository root with `./start.sh`.
+- Run commands from the repository root.
+- Test with `uv run pytest`.
+- Lint with `uv run ruff check .`.
+- Keep LLM-backed calls mocked in automated tests.
 - Avoid editing `src/.venv/`.
 
-## Priority order
+## Phase 1: Build The Test Foundation - completed
 
-### Phase 1: Build the test foundation
+- Needed: reusable deterministic fixtures and mocks for uploaded context, SQL dialect, generated rules, structured LLM responses, history boundaries, and task boundaries.
+- Implemented: shared fixtures in `tests/conftest.py`, plus unit tests under `tests/unit` and route/functional tests under `tests/functional`.
+- Needed: baseline coverage before refactors.
+- Implemented: context ingestion, prompt construction, result formatting, logic dispatch, task lifecycle, route contracts, workflow smoke tests, and history failure isolation.
 
-**Status:** complete for the current stabilization pass. The project now has API, workflow-boundary, prompt-construction, formatting, context-ingestion, logic-dispatch, and async task-manager coverage in `tests`. Recent cleanup also removed pandas from runtime result rendering, so formatting tests now exercise plain `{"Category", "Details"}` row dictionaries and template-owned table styling.
+## Phase 2: Harden Async All-Rules Analysis And Validation - completed
 
-**Why this comes first:** the codebase already has multiple flows, async task behavior, and non-critical failure handling. A broad test scaffold will make every later refactor safer and will expose current contracts before they drift.
+- Needed: stable async task states and polling contracts.
+- Implemented: pending/running/completed/failed/cancelled state tests, cancellation checks, partial-result retention, `completed_rules`, and `next_index` coverage.
+- Needed: stable validation behavior before broader route work.
+- Implemented: missing upload, malformed schema, empty rules, blank dialect, missing flow inputs, unknown flow, and visible error rendering tests.
+- Needed: non-critical history behavior.
+- Implemented: success, failure, cancellation, progress, and history-write failure tests with deterministic mocks.
 
-**Completed tasks**
+## Phase 3: Lock Down Prompt And Result Contracts - completed
 
-1. Added reusable fixtures for uploaded context, SQL dialects, generated rules, and parsed LLM responses, with parameterized invalid schema and rules cases.
-2. Added unit coverage for schema normalization, rule splitting, prompt construction, result formatting, task-state transitions, cancellation checks, and history failures remaining non-critical.
-3. Added API-level checks for `/`, `/history`, history detail/delete/stat endpoints, `POST /run`, `GET /tasks/{task_id}`, and `POST /tasks/{task_id}/cancel`.
-4. Added workflow-boundary tests for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis` without live LLM calls.
+- Needed: stable prompt variables for all LLM-backed flows.
+- Implemented: mocked parser tests for rule analysis, question analysis, and rule generation prompt construction.
+- Needed: stable result rows for UI and history rendering.
+- Implemented: row ordering, summary placement, generated-rule ordering, empty-result handling, and HTML escaping tests.
+- Needed: functional workflow coverage for existing flows.
+- Implemented: FastAPI form-submission smoke tests for one rule analysis, all rules analysis, rule generation, and question analysis with structured LLM fakes.
 
-**Acceptance criteria**
+## Phase 4: Refactor API Routing And Flow Layout - in progress
 
-- Tests run without requiring real `BASE_URL`, `OPENAI_API_KEY`, or `OPENAI_MODEL`.
-- The test suite documents local setup and manual verification in `TEST_PLAN.md`.
-- Failures in history persistence do not break successful analysis outcomes.
-- The async task lifecycle can be exercised deterministically.
+- Needed: behavior-preserving route split.
+- Implemented: routers under `src/context_doctor/routers`, with legacy browser paths and `/api` aliases covered by tests.
+- Needed next: choose and implement the exact empty-response error shape.
+- Needed next: move analysis flows into a dedicated package.
+- Needed later: route single-rule analysis through the task manager only after choosing the async API shape.
+- Constraint: do not remove legacy `/run` or `/tasks/*` paths until replacement browser behavior is manually re-verified or covered by browser automation.
 
-**Verification**
+## Phase 5: Rework Context Caching And Persistence - pending
 
-- From the repository root: `uv run ruff check .`
-- From the repository root: `uv run pytest`
-- Manual checks from `TEST_PLAN.md`: `/`, `/history`, all four flows, async polling, cancellation, partial results.
+- Needed: define persistence semantics before database or UI changes.
+- Implement: `ContextService` boundary, immutable context snapshots for async tasks, context repository/storage, `context_id`, history traceability, create-vs-replace behavior, expiry/deletion, and UI reuse/new-upload controls.
 
-### Phase 2: Harden async all-rules analysis and validation
+## Phase 6: Extract Frontend JavaScript - pending
 
-**Status:** automated coverage is in place for the current task lifecycle, cancellation, partial results, request validation, and non-critical history boundaries. Remaining work is production hardening and manual browser verification.
+- Needed: separate frontend behavior from templates without visual redesign.
+- Implement: package static JS entrypoint, static asset serving, moved inline JS, preserved `/run` and task polling behavior, testable DOM/state helpers, and browser coverage for UI-only behavior.
+- Constraint: add Playwright only when browser-only behavior is being automated.
 
-**Why now:** `all_rules_analysis` is the most stateful path. It combines thread execution, cancellation, partial-page delivery, and history side effects, so it should be stabilized before broader refactors.
+## Phase 7: Explore Agentic Tooling And SQL-Dialect Documentation Checks - pending
 
-**Concrete first tasks**
+- Needed: concrete product decision before implementation.
+- Implement: scoped agentic behavior and SQL dialect documentation validation only after core API, context, and frontend contracts are stable.
 
-1. Verify task-state transitions in `TaskManager` for pending, running, completed, failed, and cancelled.
-2. Lock in cancellation checks, partial-result collection, and `next_index` behavior.
-3. Tighten user-facing validation for missing uploads, empty rules, missing dialects, malformed schemas, and unknown flows.
-4. Confirm history writes stay non-critical in both success and failure paths.
+## Recommended Next Move
 
-**Acceptance criteria**
-
-- Async progress updates remain stable under cancellation and failure.
-- Partial results are preserved and reported predictably.
-- Validation errors are clear and do not leak internal exceptions.
-
-**Verification**
-
-- `uv run ruff check .`
-- Manual async checks from `TEST_PLAN.md`, especially polling and cancellation.
-
-### Phase 3: Lock down prompt/result contracts
-
-**Status:** complete for the current automated test pass. Prompt construction, row-list result formatting, flow dispatch, required inputs, and optional rule-generation question behavior are covered.
-
-**Why now:** prompt inputs and output formatting are core compatibility boundaries. Once they are tested, later changes can be made without breaking the UI or history renderers.
-
-**Concrete first tasks**
-
-1. Cover prompt construction in all three analysis flows with mocked parsed responses.
-2. Cover result formatting helpers and generated-rule ordering.
-3. Confirm `logic.run_analysis()` dispatch and required-input behavior.
-
-**Acceptance criteria**
-
-- Prompt variables map consistently to the expected flow inputs.
-- Result rows, summaries, and empty-list cases render predictably.
-- `rule_generation` preserves the optional-question behavior.
-
-**Verification**
-
-- API tests for `/run`.
-- Manual smoke tests for all synchronous flows.
-
-### Phase 4: Refactor API routing and flow layout
-
-**Status:** not started. This matches the `TODO` items to split API endpoints into routers, move API routes under `/api`, return an empty response structure plus error text for empty responses, route single-rule analysis through the task manager, and move analysis flows into a dedicated flows folder.
-
-**Why after tests:** splitting routers and moving flow modules is a structural change with broad import impact. It is much safer once the current contracts are covered.
-
-**Concrete first tasks**
-
-1. Split `fastapi_app.py` into routers while preserving current browser routes during the transition.
-2. Move API-style endpoints under `/api`; keep compatibility shims or deliberate redirects only if browser flows still depend on old paths.
-3. Move analysis flows into a dedicated flows package.
-4. Rework single-rule analysis to use the task manager only after async behavior is stable and covered.
-5. Standardize empty-response errors as an empty structure plus error text.
-
-**Acceptance criteria**
-
-- Existing endpoints and workflow behavior remain intact.
-- Imports are clearer and responsibilities are easier to navigate.
-
-**Verification**
-
-- Run the API tests and manual UI checks.
-- Confirm `/`, `/history`, `/run`, and task polling still work.
-
-### Phase 5: Rework context caching and persistence
-
-**Status:** not started. The `TODO` now defines this as a service-boundary and persistence feature, not just a rename.
-
-**Why this is high risk:** this touches ingestion, validation, persistence, and async task behavior all at once. It should not start until tests and flow contracts are stable.
-
-**Concrete first tasks**
-
-1. Rename/refactor `ContextStore` into `ContextService` in `src/context_doctor/services/context_service.py`.
-2. Keep `AnalysisContext` colocated with `ContextService`; move it later only if it becomes independently shared.
-3. Introduce `ContextRepository` or another storage object only when persistence is introduced.
-4. Preserve immutable `AnalysisContext` snapshots for async tasks so later context updates cannot affect in-flight runs.
-5. Add `context_id` creation, history traceability, create-vs-replace semantics, expiry/deletion, and UI reuse/new-upload controls as one coherent persistence design.
-
-**Acceptance criteria**
-
-- Upload ingestion, validation, normalization, and persistence orchestration are clearly separated.
-- A `context_id` is returned after upload when persistence is enabled.
-- Raw schema JSON, normalized schema description, rules, dialect, filenames, and timestamps are persisted.
-- History entries can store `context_id`.
-- Create-vs-replace semantics, deletion/expiry, and UI reuse/new-context controls are defined before implementation.
-
-**Do not start with**
-
-- Database schema changes without a confirmed persistence contract.
-- UI controls for reuse/new context before the backend data model is fixed.
-- Async task wiring changes before context snapshots are immutable.
-
-**Verification**
-
-- Add tests first for the current store behavior, then migrate to service/repository tests.
-- Validate that existing analysis flows still receive complete context objects.
-
-### Phase 6: Extract frontend JavaScript
-
-**Status:** not started. Table CSS has moved into templates, but table HTML generation still lives in Python `utils.prettify_html`. The `TODO` asks for full table generation to move to JavaScript later.
-
-**Why later:** this is mostly a maintainability upgrade. It should follow backend stabilization so the DOM/state contracts are known and stable.
-
-**Concrete first tasks**
-
-1. Create `src/context_doctor/static/index.js`.
-2. Serve package static assets through FastAPI and load the JS entrypoint from Jinja.
-3. Move inline JS into modules/functions and keep templates focused on markup, Jinja-provided data, and data attributes.
-4. Move table generation from Python utilities to JS only when the DOM rendering contract is covered.
-5. Preserve `/run`, `/tasks/{task_id}`, cancellation, polling, paging/goto, synchronous results, and partial-result rendering.
-6. Add lightweight JS unit-test scaffolding for testable DOM/state helpers.
-
-**Acceptance criteria**
-
-- No visual redesign is introduced.
-- The current frontend behavior remains intact.
-- DOM helpers are testable in isolation.
-
-**Verification**
-
-- Manual UI checks for the main page, async polling, cancellation, and history pages.
-
-### Phase 7: Explore agentic tooling and SQL-dialect documentation checks
-
-**Why last:** these are exploratory capabilities, not stabilization work. They should be deferred until the core product is dependable.
-
-**Concrete first tasks**
-
-1. Define the actual agentic behavior the product should support.
-2. Add a tool or validation path that can check SQL dialect documentation validity/currentness.
-3. Decide what belongs in-product versus in supporting ops tooling.
-
-**Acceptance criteria**
-
-- The exploration is scoped to a concrete user problem.
-- The capability has clear input/output boundaries and a test plan.
-
-**Do not start with**
-
-- Prompt rewrites without a product decision.
-- New orchestration layers without a target workflow.
-
-## Risk and dependency matrix
-
-| Area | Dependency | Main risk | Mitigation |
-| --- | --- | --- | --- |
-| Testing foundation | None, but depends on understanding current flows | Tests may encode unstable behavior if written too late | Write tests before large refactors and use current code paths as the reference |
-| Async all-rules hardening | Test fixtures and task-manager coverage | Cancellation and partial-result regressions | Add deterministic mocks and verify `next_index`, status transitions, and partial pages |
-| Prompt/result contracts | LLM mocks and row-list format helpers | UI/history output drift | Snapshot the contract with unit and API tests |
-| API/flow refactor | Stable tests and prompt contracts | Import churn across app entrypoints | Keep behavior unchanged while moving structure |
-| Context persistence refactor | Stable tests, immutable context snapshots, clarified history model | High coupling across upload, async tasks, and history | Defer until contracts are fixed; introduce repository abstractions deliberately |
-| Frontend JS extraction | Stable endpoint contracts | Breaking form submission/polling/cancellation behavior | Keep markup/data attributes stable and move logic incrementally |
-| Agentic tooling exploration | Product decision and architectural clarity | Premature complexity | Treat as exploratory and last in sequence |
-
-## Recommended next move
-
-The test foundation, prompt/result contract coverage, and pandas removal are now in place. The next recommended move is to finish Phase 2 production hardening and the remaining manual async checks in `TEST_PLAN.md`, then proceed to the Phase 4 API/flow layout work. Avoid beginning high-risk context caching, frontend JavaScript extraction, or exploratory tooling until those async checks and API boundaries are complete.
+Start Phase 4 work. The safest next item is standardizing empty-response behavior, followed by moving analysis flows into a dedicated package. Context persistence, frontend JavaScript extraction, Playwright, and agentic tooling should remain deferred until their prerequisite contracts are chosen.
