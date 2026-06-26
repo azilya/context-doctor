@@ -2,16 +2,15 @@
 
 ## Testing plan
 
-- Build shared fixtures and LLM mocks for schema JSON, rules text, SQL dialects, questions, generated rules, and representative parsed responses.
-- Add unit tests for flow foundations: schema normalization, rule splitting, prompt input construction, result formatting, task-state transitions, cancellation checks, and non-critical history failures.
-- Add API tests for `/`, `/history`, `POST /run`, `GET /tasks/{task_id}`, and `POST /tasks/{task_id}/cancel`.
-- Add functional tests for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis` workflows.
-- Document local test setup, recommended test commands, and the manual checklist in `TEST_PLAN.md`.
+- Unit tests live under `tests/unit` and cover schema normalization, rule splitting, prompt input construction, result formatting, task-state transitions, cancellation checks, and non-critical history failures.
+- Functional tests live under `tests/functional` and cover `rule_analysis`, `question_analysis`, `rule_generation`, `all_rules_analysis`, browser-facing route contracts, task polling/cancellation contracts, and history routes with deterministic mocks.
+- Browser-only automation remains deferred: before adding Playwright, keep endpoint contracts frozen and use deterministic LLM/task/history mocks; see `TEST_PLAN.md`.
+- Add automated browser tests only when working on browser-only behavior such as file picker UX, copy buttons, collapsibles, async polling DOM updates, stop/cancel behavior, pagination controls, or history-detail delete redirects.
 
 ## API and flow refactor
 
 - Split API endpoints into routers.
-- Move API routes under `/api` endpoints.
+- Move API routes under `/api` endpoints; compatibility aliases now exist for `/api/run` and `/api/tasks/*`, with legacy browser paths kept until endpoint contracts and browser checklist coverage are ready.
 - Add error propagation for empty response: empty structure + error text
 - Rework single rule analysis to use the task manager
 - Move analysis flows into a dedicated flows folder.
