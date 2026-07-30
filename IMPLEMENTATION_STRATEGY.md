@@ -13,7 +13,7 @@ Context Doctor has deterministic unit and functional coverage for the existing w
 - `src/context_doctor/logic.py` - flow dispatch and required-input validation.
 - `src/context_doctor/context_store.py` - context ingestion and normalization.
 - `src/context_doctor/task_manager.py` - async all-rules orchestration, cancellation, and partial results.
-- `src/context_doctor/rule_analysis_flow.py`, `src/context_doctor/question_analysis_flow.py`, `src/context_doctor/rule_generation_flow.py` - prompt construction and result shaping.
+- `src/context_doctor/flows/` - prompt construction and result shaping for each analysis workflow.
 - `src/context_doctor/services/history_service.py` and `src/context_doctor/database/*` - history persistence and failure isolation.
 - `src/context_doctor/templates/*` - current browser UI contracts.
 
@@ -50,13 +50,13 @@ Context Doctor has deterministic unit and functional coverage for the existing w
 - Needed: functional workflow coverage for existing flows.
 - Implemented: FastAPI form-submission smoke tests for one rule analysis, all rules analysis, rule generation, and question analysis with structured LLM fakes.
 
-## Phase 4: Refactor API Routing And Flow Layout - in progress
+## Phase 4: Refactor API Routing And Flow Layout - completed
 
 - Needed: behavior-preserving route split.
 - Implemented: routers under `src/context_doctor/routers`, with legacy browser paths and `/api` aliases covered by tests.
-- Needed next: choose and implement the exact empty-response error shape.
-- Needed next: move analysis flows into a dedicated package.
-- Needed later: route single-rule analysis through the task manager only after choosing the async API shape.
+- Implemented: synchronous flows reject `None`, an empty string, or an empty list with a flow-specific error; the route renders that error with empty result/context fields and records a best-effort history failure.
+- Implemented: analysis flows live in the dedicated `context_doctor.flows` package, and internal callers and tests use the new module paths.
+- Deferred: route single-rule analysis through the task manager only after choosing the async API shape; this changes the browser/API contract rather than the completed route-layout refactor.
 - Constraint: do not remove legacy `/run` or `/tasks/*` paths until replacement browser behavior is manually re-verified or covered by browser automation.
 
 ## Phase 5: Rework Context Caching And Persistence - pending
@@ -77,4 +77,4 @@ Context Doctor has deterministic unit and functional coverage for the existing w
 
 ## Recommended Next Move
 
-Start Phase 4 work. The safest next item is standardizing empty-response behavior, followed by moving analysis flows into a dedicated package. Context persistence, frontend JavaScript extraction, Playwright, and agentic tooling should remain deferred until their prerequisite contracts are chosen.
+Start Phase 5 design by specifying context identity, immutable snapshot, and create-versus-replace semantics before changing persistence or the UI. Choose the single-rule async API contract alongside that design so tasks can retain immutable context snapshots. Frontend JavaScript extraction, Playwright, and agentic tooling should remain deferred until their prerequisite contracts are chosen.

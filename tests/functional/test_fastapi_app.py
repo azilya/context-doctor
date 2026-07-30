@@ -192,6 +192,31 @@ def test_api_run_alias_preserves_sync_flow_contract(
     no_history_logging["complete_sync_execution"].assert_called_once()
 
 
+def test_run_empty_sync_response_renders_error_with_empty_result_context(
+    monkeypatch,
+    no_history_logging,
+    post_run,
+):
+    monkeypatch.setattr(
+        fastapi_app,
+        "run_analysis",
+        Mock(side_effect=ValueError("rule_analysis returned an empty response")),
+    )
+
+    response = post_run(
+        {
+            "flow": "rule_analysis",
+            "sql_dialect": "PostgreSQL",
+            "new_rule": "Rule #9: Use SUM(orders.revenue).",
+        }
+    )
+
+    assert_response_contains(response, "rule_analysis returned an empty response")
+    assert 'id="analysis_result"' not in response.text
+    no_history_logging["complete_sync_execution"].assert_not_called()
+    no_history_logging["fail_execution"].assert_called_once()
+
+
 def test_api_run_alias_preserves_all_rules_async_contract(
     monkeypatch,
     no_history_logging,

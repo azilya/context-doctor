@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from . import settings
 from .context_store import AnalysisContext
-from .rule_analysis_flow import analyze_single_rule_pipeline, guidelines
+from .flows.rule_analysis import analyze_single_rule_pipeline, guidelines
 from .services.history_service import HistoryService
 from .utils import details_by_category, prettify_html
 

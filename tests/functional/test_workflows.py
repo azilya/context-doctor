@@ -1,11 +1,11 @@
 import re
 import time
 
-from context_doctor import (
-    fastapi_app,
-    question_analysis_flow,
-    rule_analysis_flow,
-    rule_generation_flow,
+from context_doctor import fastapi_app
+from context_doctor.flows import (
+    question_analysis as question_analysis_flow,
+    rule_analysis as rule_analysis_flow,
+    rule_generation as rule_generation_flow,
 )
 from context_doctor.task_manager import TaskManager
 from tests.conftest import assert_response_contains
@@ -60,7 +60,9 @@ def rule_validation_response(summary="Functional guideline validation summary.")
 def relevant_context_response():
     return question_analysis_flow.RelevantContext(
         analysis_summary="Functional context filtering summary.",
-        relevant_rules=["Rule #2: WHEN users ask for revenue, use SUM(orders.revenue)."],
+        relevant_rules=[
+            "Rule #2: WHEN users ask for revenue, use SUM(orders.revenue)."
+        ],
         relevant_descriptions=[
             question_analysis_flow.RelevantDescription(
                 type="column",
@@ -237,7 +239,9 @@ def test_all_rules_analysis_workflow_starts_task_and_returns_polled_results(
         files=upload_files,
     )
 
-    assert_response_contains(response, "Waiting for results", "pollTask()", "stopTask()")
+    assert_response_contains(
+        response, "Waiting for results", "pollTask()", "stopTask()"
+    )
     task_id = task_id_from_response(response)
     payload = wait_for_task(api_client, task_id)
 
