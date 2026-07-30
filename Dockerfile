@@ -27,5 +27,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 # Default port for uvicorn
 EXPOSE 8000
 
+RUN adduser local
+USER local
+
 # Run the ASGI application using uvicorn
 CMD ["uvicorn", "context_doctor.fastapi_app:app", "--host", "0.0.0.0", "--port", "8000", "--timeout-keep-alive", "1200", "--timeout-graceful-shutdown", "1200"]
