@@ -19,6 +19,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "")
 
 MAX_CONCURRENT_RULE_ANALYSES = _int_env("MAX_CONCURRENT_RULE_ANALYSES", 1)
+# Cached contexts expire after 30 days by default to prevent unbounded growth.
+CONTEXT_CACHE_TTL_SECONDS = _int_env("CONTEXT_CACHE_TTL_SECONDS", 30 * 24 * 60 * 60)
 
 CONTEXT_DOCTOR_DB_PATH = os.getenv(
     "CONTEXT_DOCTOR_DB_PATH",

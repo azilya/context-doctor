@@ -98,7 +98,7 @@ def assert_no_pending_responses(dispatcher):
 
 
 def task_id_from_response(response):
-    match = re.search(r'var taskId = "([^"]+)";', response.text)
+    match = re.search(r'"taskId": "([^"]+)"', response.text)
     assert match, response.text
     return match.group(1)
 
@@ -239,9 +239,7 @@ def test_all_rules_analysis_workflow_starts_task_and_returns_polled_results(
         files=upload_files,
     )
 
-    assert_response_contains(
-        response, "Waiting for results", "pollTask()", "stopTask()"
-    )
+    assert_response_contains(response, "Waiting for results", 'src="/static/index.js"')
     task_id = task_id_from_response(response)
     payload = wait_for_task(api_client, task_id)
 

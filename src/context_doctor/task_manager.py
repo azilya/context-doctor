@@ -8,14 +8,17 @@ from threading import Lock, Thread
 from uuid import uuid4
 
 from . import settings
-from .context_store import AnalysisContext
+from .services.context_service import AnalysisContext
 from .flows.rule_analysis import analyze_single_rule_pipeline, guidelines
+from .flows.rule_analysis import analyze_rule_pipeline
 from .services.history_service import HistoryService
 from .utils import details_by_category, prettify_html
 
 
 @dataclass
 class TaskState:
+    """Mutable bookkeeping for one background analysis task."""
+
     task_id: str
     status: str = "pending"
     created_at: float = field(default_factory=time.time)
@@ -35,15 +38,103 @@ class TaskManager:
         self._tasks: dict[str, TaskState] = {}
 
     def start_all_rules_analysis(self, context: AnalysisContext) -> str:
+        """Start an all-rules task using a deep immutable context snapshot.
+
+        Args:
+            context: Validated source context.
+
+        Returns:
+            Opaque task identifier used for polling and cancellation.
+        """
         task_id = uuid4().hex
         state = TaskState(task_id=task_id)
         with self._lock:
             self._tasks[task_id] = state
+        # Snapshot before starting the thread so an explicit cache replacement can
+        # never alter an already-running analysis.
         thread = Thread(
-            target=self._run_all_rules_analysis, args=(task_id, context), daemon=True
+            target=self._run_all_rules_analysis,
+            args=(task_id, context.snapshot()),
+            daemon=True,
         )
         thread.start()
         return task_id
+
+    def start_rule_analysis(self, context: AnalysisContext, new_rule: str) -> str:
+        """Start a single-rule analysis through the shared task lifecycle.
+
+        Args:
+            context: Validated source context.
+            new_rule: Proposed rule to compare and validate.
+
+        Returns:
+            Opaque task identifier used by the common polling API.
+        """
+        if not new_rule.strip():
+            raise ValueError("New rule is required for rule_analysis flow")
+        task_id = uuid4().hex
+        with self._lock:
+            self._tasks[task_id] = TaskState(task_id=task_id, total_rules=1)
+        # Single-rule and all-rules work now share status, cancellation, partial
+        # output, and immutable snapshot behavior.
+        Thread(
+            target=self._run_rule_analysis,
+            args=(task_id, context.snapshot(), new_rule.strip()),
+            daemon=True,
+        ).start()
+        return task_id
+
+    def _run_rule_analysis(
+        self, task_id: str, context: AnalysisContext, new_rule: str
+    ) -> None:
+        """Execute one proposed-rule analysis in a managed background thread."""
+        start_time = time.time()
+        try:
+            self._set_status(
+                task_id,
+                status="running",
+                rules_text=context.rules_text,
+                schema_json=json.dumps(
+                    context.schema_description, indent=2, ensure_ascii=False
+                ),
+                guidelines_text=guidelines,
+            )
+            if self._is_cancelled(task_id):
+                return
+            rows, guidelines_text = analyze_rule_pipeline(
+                new_rule,
+                context.rules_text,
+                context.sql_dialect,
+                context.schema_description,
+            )
+            if rows is None or rows == []:
+                raise ValueError("rule_analysis returned an empty response")
+            self._set_status(task_id, guidelines_text=guidelines_text)
+            self._append_results(task_id, 0, prettify_html(rows))
+            if self._is_cancelled(task_id):
+                self._set_status(task_id, status="cancelled")
+            else:
+                self._set_status(task_id, status="completed")
+                try:
+                    HistoryService.complete_async_execution(
+                        task_id=task_id,
+                        result_html=self._joined_results(task_id),
+                        duration_seconds=time.time() - start_time,
+                    )
+                except Exception:
+                    logging.exception(
+                        "History completion logging failed (non-critical)"
+                    )
+        except Exception as exc:
+            self._set_status(task_id, status="failed", error=str(exc))
+            try:
+                HistoryService.fail_async_execution(
+                    task_id=task_id,
+                    error_message=str(exc),
+                    duration_seconds=time.time() - start_time,
+                )
+            except Exception:
+                logging.exception("History failure logging failed (non-critical)")
 
     def get_status(self, task_id: str, from_index: int = 0) -> dict | None:
         with self._lock:

@@ -2,7 +2,7 @@ import logging
 
 from pydantic import BaseModel
 
-from .context_store import AnalysisContext
+from .services.context_service import AnalysisContext
 from .flows.question_analysis import filter_and_compare_question
 from .flows.rule_analysis import (
     all_rules_pipeline,

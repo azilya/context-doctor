@@ -94,3 +94,18 @@ docker run --rm -p 8000:8000 --env-file .env context-doctor
 ```
 
 Open <http://localhost:8000/>.
+
+## Reusable contexts and task APIs
+
+Uploads are persisted with an opaque `context_id`. Supply that ID in the main form to
+reuse a validated context without re-uploading files, or manage contexts through
+`POST /api/contexts`, `GET /api/contexts/{context_id}`, and
+`DELETE /api/contexts/{context_id}`. Uploading creates a new identity unless
+`replace_context_id` is explicitly supplied.
+
+All-rules tasks use the existing polling endpoints. Single-rule clients can opt into the
+same task lifecycle with `POST /api/tasks/rule-analysis` by supplying `context_id` and
+`new_rule`; the browser `/run` route remains backward compatible.
+
+The opt-in `GET /api/tools/sql-dialect-docs?dialect=PostgreSQL` tool checks a registered
+official current-documentation URL. It performs external traffic only when invoked.
