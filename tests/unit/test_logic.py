@@ -33,7 +33,9 @@ def test_run_analysis_dispatches_rule_analysis(monkeypatch, analysis_context):
 
 def test_run_analysis_dispatches_question_analysis(monkeypatch, analysis_context):
     filter_and_compare_question = Mock(return_value="question-output")
-    monkeypatch.setattr(logic, "filter_and_compare_question", filter_and_compare_question)
+    monkeypatch.setattr(
+        logic, "filter_and_compare_question", filter_and_compare_question
+    )
 
     result = logic.run_analysis(
         logic.AnalysisParams(
@@ -128,3 +130,25 @@ def test_run_analysis_fails_loudly_for_invalid_inputs(
 ):
     with pytest.raises(ValueError, match=expected_message):
         logic.run_analysis(logic.AnalysisParams(context=analysis_context, **params))
+
+
+@pytest.mark.parametrize("empty_output", [None, "", []])
+def test_run_analysis_fails_loudly_for_empty_flow_response(
+    monkeypatch,
+    analysis_context,
+    empty_output,
+):
+    monkeypatch.setattr(
+        logic,
+        "analyze_rule_pipeline",
+        Mock(return_value=(empty_output, "GUIDELINES")),
+    )
+
+    with pytest.raises(ValueError, match="rule_analysis returned an empty response"):
+        logic.run_analysis(
+            logic.AnalysisParams(
+                flow="rule_analysis",
+                context=analysis_context,
+                new_rule="Rule #9: Use SUM(orders.revenue).",
+            )
+        )

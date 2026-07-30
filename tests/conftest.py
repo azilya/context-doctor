@@ -30,7 +30,9 @@ class ParseResponseRecorder:
 
     def only_call(self):
         if len(self.calls) != 1:
-            raise AssertionError(f"Expected 1 parse_response call, got {len(self.calls)}")
+            raise AssertionError(
+                f"Expected 1 parse_response call, got {len(self.calls)}"
+            )
         return self.calls[0]
 
 
@@ -215,7 +217,7 @@ def analysis_context(valid_schema_bytes, valid_rules_bytes, sql_dialect):
 
 @pytest.fixture
 def category_result():
-    from context_doctor.rule_analysis_flow import CategoryResult
+    from context_doctor.flows.rule_analysis import CategoryResult
 
     return CategoryResult(
         explanation="Conflicts with an existing revenue rule.",
@@ -226,7 +228,7 @@ def category_result():
 
 @pytest.fixture
 def accept_new_rule_response(category_result):
-    from context_doctor.rule_analysis_flow import AcceptNewRule
+    from context_doctor.flows.rule_analysis import AcceptNewRule
 
     return AcceptNewRule(
         analysis_summary="The new rule overlaps with revenue guidance.",
@@ -239,7 +241,7 @@ def accept_new_rule_response(category_result):
 
 @pytest.fixture
 def question_analysis_response():
-    from context_doctor.question_analysis_flow import QuestionAnalysis
+    from context_doctor.flows.question_analysis import QuestionAnalysis
 
     return QuestionAnalysis(
         analysis_summary="The filtered rules answer the question.",
@@ -252,7 +254,7 @@ def question_analysis_response():
 
 @pytest.fixture
 def relevant_description():
-    from context_doctor.question_analysis_flow import RelevantDescription
+    from context_doctor.flows.question_analysis import RelevantDescription
 
     return RelevantDescription(
         type="column",
@@ -263,7 +265,7 @@ def relevant_description():
 
 @pytest.fixture
 def relevant_context_response(relevant_description):
-    from context_doctor.question_analysis_flow import RelevantContext
+    from context_doctor.flows.question_analysis import RelevantContext
 
     return RelevantContext(
         analysis_summary="Revenue rules and columns are relevant.",
@@ -274,7 +276,7 @@ def relevant_context_response(relevant_description):
 
 @pytest.fixture
 def rule_suggestion_response():
-    from context_doctor.rule_generation_flow import RuleSuggestion
+    from context_doctor.flows.rule_generation import RuleSuggestion
 
     return RuleSuggestion(
         analysis_summary="A revenue aggregation rule solves the problem.",

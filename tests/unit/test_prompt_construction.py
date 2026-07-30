@@ -1,7 +1,7 @@
-from context_doctor import (
-    question_analysis_flow,
-    rule_analysis_flow,
-    rule_generation_flow,
+from context_doctor.flows import (
+    question_analysis as question_analysis_flow,
+    rule_analysis as rule_analysis_flow,
+    rule_generation as rule_generation_flow,
 )
 
 

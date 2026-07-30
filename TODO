@@ -9,11 +9,11 @@
 
 ## API and flow refactor
 
-- Split API endpoints into routers.
-- Move API routes under `/api` endpoints; compatibility aliases now exist for `/api/run` and `/api/tasks/*`, with legacy browser paths kept until endpoint contracts and browser checklist coverage are ready.
-- Add error propagation for empty response: empty structure + error text
+- Split API endpoints into routers. (Completed.)
+- Move API routes under `/api` endpoints; compatibility aliases now exist for `/api/run` and `/api/tasks/*`, with legacy browser paths kept until endpoint contracts and browser checklist coverage are ready. (Completed.)
+- Add error propagation for empty response: empty structure + error text. (Completed for synchronous flows.)
 - Rework single rule analysis to use the task manager
-- Move analysis flows into a dedicated flows folder.
+- Move analysis flows into a dedicated flows folder. (Completed.)
 
 ## Context caching
 

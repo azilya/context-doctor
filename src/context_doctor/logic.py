@@ -3,12 +3,12 @@ import logging
 from pydantic import BaseModel
 
 from .context_store import AnalysisContext
-from .question_analysis_flow import filter_and_compare_question
-from .rule_analysis_flow import (
+from .flows.question_analysis import filter_and_compare_question
+from .flows.rule_analysis import (
     all_rules_pipeline,
     analyze_rule_pipeline,
 )
-from .rule_generation_flow import generate_rule_pipeline
+from .flows.rule_generation import generate_rule_pipeline
 
 logging.basicConfig(
     level=logging.INFO,
@@ -75,6 +75,9 @@ def run_analysis(params: AnalysisParams):
         logging.info(f"{analysis_output}")
     else:
         raise ValueError(f"Unknown flow: {params.flow}")
+
+    if analysis_output is None or analysis_output == "" or analysis_output == []:
+        raise ValueError(f"{params.flow} returned an empty response")
 
     # Return the analysis output along with the downloaded rules and schema description
     # and guidelines_text (empty string for flows that don't provide it)
