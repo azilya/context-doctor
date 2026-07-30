@@ -54,16 +54,24 @@ __all__ = [
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database on application startup."""
+    """Initialize persistence and expire stale cached contexts.
+
+    Database and cache maintenance are best-effort startup concerns so history or
+    cache failures never prevent the analysis UI from becoming available.
+    """
     try:
         init_db()
-        # Bound cache growth during each startup; expiry failures remain
-        # non-critical like history initialization failures.
-        ContextService.delete_expired(settings.CONTEXT_CACHE_TTL_SECONDS)
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.exception(f"Failed to initialize database: {e}")
         # Don't fail startup - history is non-critical
+
+    try:
+        # Keep cache cleanup isolated from schema initialization so its failure is
+        # reported accurately and cannot mask a successful database setup.
+        ContextService.delete_expired(settings.CONTEXT_CACHE_TTL_SECONDS)
+    except Exception as e:
+        logger.exception(f"Failed to expire cached contexts: {e}")
 
 
 if __name__ == "__main__":

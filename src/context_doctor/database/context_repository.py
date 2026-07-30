@@ -13,14 +13,34 @@ class ContextRepository:
 
     @staticmethod
     def get(session: Session, context_id: str) -> StoredContext | None:
-        """Return one stored context by identifier."""
+        """Return one stored context by identifier.
+
+        Args:
+            session: Active database session.
+            context_id: Stable context identifier.
+
+        Returns:
+            Stored context record, or ``None`` when it does not exist.
+        """
+        # Primary-key lookup is sufficient because context identifiers are opaque
+        # and globally unique within this application database.
         return session.get(StoredContext, context_id)
 
     @classmethod
     def upsert(
         cls, session: Session, context_id: str, context, now: datetime
     ) -> StoredContext:
-        """Create or replace a context while preserving its creation time."""
+        """Create or replace a context while preserving its creation time.
+
+        Args:
+            session: Active database session.
+            context_id: Identifier to create or replace.
+            context: Validated analysis context to serialize.
+            now: Timestamp used for creation and last-use tracking.
+
+        Returns:
+            Newly created or updated persistence record.
+        """
         record = cls.get(session, context_id)
         if record is None:
             record = StoredContext(context_id=context_id, created_at=now)
@@ -41,13 +61,29 @@ class ContextRepository:
 
     @staticmethod
     def touch(session: Session, record: StoredContext, now: datetime) -> None:
-        """Update last-used time for retention accounting."""
+        """Update last-used time for retention accounting.
+
+        Args:
+            session: Active database session.
+            record: Context record being reused.
+            now: New last-used timestamp.
+        """
+        # Touching on every successful load makes expiry reflect actual reuse rather
+        # than only the original upload date.
         record.last_used_at = now
         session.flush()
 
     @classmethod
     def delete(cls, session: Session, context_id: str) -> bool:
-        """Delete a context when it exists."""
+        """Delete a context when it exists.
+
+        Args:
+            session: Active database session.
+            context_id: Identifier to delete.
+
+        Returns:
+            Whether a stored record was found and deleted.
+        """
         record = cls.get(session, context_id)
         if record is None:
             return False
@@ -57,7 +93,17 @@ class ContextRepository:
 
     @staticmethod
     def delete_older_than(session: Session, cutoff: datetime) -> int:
-        """Bulk-delete contexts last used before the cutoff."""
+        """Bulk-delete contexts last used before the cutoff.
+
+        Args:
+            session: Active database session.
+            cutoff: Exclusive upper bound for the last-used timestamp.
+
+        Returns:
+            Number of deleted records.
+        """
+        # A single database-side delete bounds startup cleanup cost and avoids
+        # loading expired uploaded schemas into application memory.
         return (
             session.query(StoredContext)
             .filter(StoredContext.last_used_at < cutoff)
