@@ -26,6 +26,7 @@
 - Required env vars for LLM-backed flows: `BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`.
 - Optional env vars: `MAX_CONCURRENT_RULE_ANALYSES` defaults to `1`; `DATABASE_URL` overrides SQLite; `CONTEXT_DOCTOR_DB_PATH` overrides the default SQLite path before `DATABASE_URL` is built.
 - Request context is supplied by uploading schema JSON, rules text, and SQL dialect on every `/run` request.
+- LLM-backed calls must be mocked in tests; do not use real API credentials or allow live OpenAI-compatible traffic.
 
 ## Execution Flow
 
