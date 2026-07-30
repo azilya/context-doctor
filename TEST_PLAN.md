@@ -38,3 +38,12 @@
 - Run tests: `uv run pytest`.
 - Run lint: `uv run ruff check .`.
 - Format when needed: `uv run ruff format .`.
+
+## Phase 5-7 Coverage
+
+- Context lifecycle: immutable snapshots, create/replace identity rules, reconstruction,
+  last-used touches, and API reuse metadata are covered without live services.
+- Frontend extraction: Python route tests assert packaged asset wiring; run
+  `node --test tests/js/*.test.cjs` for pure paging helper behavior.
+- Dialect documentation: supported and unsupported outcomes use a mocked HTTP boundary;
+  automated tests never access official documentation sites.

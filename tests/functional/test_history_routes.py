@@ -4,7 +4,9 @@ from context_doctor import fastapi_app
 from tests.conftest import assert_response_contains, fake_history_entry
 
 
-def test_history_page_uses_repository_boundary(monkeypatch, api_client, history_session):
+def test_history_page_uses_repository_boundary(
+    monkeypatch, api_client, history_session
+):
     list_entries = Mock(return_value=([], 0))
     get_statistics = Mock(
         return_value={
@@ -20,7 +22,9 @@ def test_history_page_uses_repository_boundary(monkeypatch, api_client, history_
         "/history?flow=rule_analysis&status=completed&search=revenue&page=2&limit=5"
     )
 
-    assert_response_contains(response, "Query History", "No History Found", "Total Queries")
+    assert_response_contains(
+        response, "Query History", "No History Found", "Total Queries"
+    )
     list_entries.assert_called_once_with(
         session=history_session,
         flow_type="rule_analysis",
@@ -48,7 +52,9 @@ def test_history_page_renders_error_fallback_when_repository_raises(
     assert_response_contains(response, "history unavailable", "No History Found")
 
 
-def test_history_detail_uses_repository_boundary(monkeypatch, api_client, history_session):
+def test_history_detail_uses_repository_boundary(
+    monkeypatch, api_client, history_session
+):
     entry = fake_history_entry()
     get_by_id = Mock(return_value=entry)
     monkeypatch.setattr(fastapi_app.HistoryRepository, "get_by_id", get_by_id)
@@ -65,8 +71,12 @@ def test_history_detail_uses_repository_boundary(monkeypatch, api_client, histor
     get_by_id.assert_called_once_with(history_session, 42)
 
 
-def test_history_detail_unknown_entry_returns_404(monkeypatch, api_client, history_session):
-    monkeypatch.setattr(fastapi_app.HistoryRepository, "get_by_id", Mock(return_value=None))
+def test_history_detail_unknown_entry_returns_404(
+    monkeypatch, api_client, history_session
+):
+    monkeypatch.setattr(
+        fastapi_app.HistoryRepository, "get_by_id", Mock(return_value=None)
+    )
 
     response = api_client.get("/history/404")
 
@@ -74,7 +84,9 @@ def test_history_detail_unknown_entry_returns_404(monkeypatch, api_client, histo
     assert response.json() == {"detail": "History entry not found"}
 
 
-def test_history_stats_uses_repository_boundary(monkeypatch, api_client, history_session):
+def test_history_stats_uses_repository_boundary(
+    monkeypatch, api_client, history_session
+):
     get_statistics = Mock(return_value={"total_queries": 3, "period_days": 14})
     monkeypatch.setattr(fastapi_app.HistoryRepository, "get_statistics", get_statistics)
 

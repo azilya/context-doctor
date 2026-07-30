@@ -59,22 +59,19 @@ Context Doctor has deterministic unit and functional coverage for the existing w
 - Deferred: route single-rule analysis through the task manager only after choosing the async API shape; this changes the browser/API contract rather than the completed route-layout refactor.
 - Constraint: do not remove legacy `/run` or `/tasks/*` paths until replacement browser behavior is manually re-verified or covered by browser automation.
 
-## Phase 5: Rework Context Caching And Persistence - pending
+## Phase 5: Rework Context Caching And Persistence - completed
 
-- Needed: define persistence semantics before database or UI changes.
-- Implement: `ContextService` boundary, immutable context snapshots for async tasks, context repository/storage, `context_id`, history traceability, create-vs-replace behavior, expiry/deletion, and UI reuse/new-upload controls.
+- Implemented: `ContextService`, persistent repository/storage, stable `context_id`, explicit create/replace, retrieval/touch, deletion/expiry, history traceability, UI/API reuse controls, and immutable async snapshots.
 
-## Phase 6: Extract Frontend JavaScript - pending
+## Phase 6: Extract Frontend JavaScript - completed
 
-- Needed: separate frontend behavior from templates without visual redesign.
-- Implement: package static JS entrypoint, static asset serving, moved inline JS, preserved `/run` and task polling behavior, testable DOM/state helpers, and browser coverage for UI-only behavior.
-- Constraint: add Playwright only when browser-only behavior is being automated.
+- Implemented: package static assets, FastAPI mounting, behavior-free template hooks, extracted flow/polling/paging/copy behavior, and lightweight Node tests for pure helpers. The visual design and endpoint contracts are preserved.
 
-## Phase 7: Explore Agentic Tooling And SQL-Dialect Documentation Checks - pending
+## Phase 7: Agentic Tooling And SQL-Dialect Documentation Checks - completed
 
-- Needed: concrete product decision before implementation.
-- Implement: scoped agentic behavior and SQL dialect documentation validation only after core API, context, and frontend contracts are stable.
+- Decision: prefer explicit, observable tools over an unconstrained autonomous prompt loop.
+- Implemented: structured official SQL-dialect documentation validation exposed as an opt-in API tool, with network-mocked unit tests.
 
 ## Recommended Next Move
 
-Start Phase 5 design by specifying context identity, immutable snapshot, and create-versus-replace semantics before changing persistence or the UI. Choose the single-rule async API contract alongside that design so tasks can retain immutable context snapshots. Frontend JavaScript extraction, Playwright, and agentic tooling should remain deferred until their prerequisite contracts are chosen.
+All roadmap phases are complete. Preserve the compatibility routes while gathering usage data; future agent orchestration can consume the structured dialect tool without changing deterministic analysis or silently introducing network access.

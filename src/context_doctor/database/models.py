@@ -87,3 +87,20 @@ class QueryHistory(Base):
 
     def __repr__(self):
         return f"<QueryHistory(id={self.id}, flow_type='{self.flow_type}', status='{self.status}')>"
+
+
+class StoredContext(Base):
+    """Persisted uploaded context that can be reused across analysis runs."""
+
+    __tablename__ = "analysis_contexts"
+
+    # Context identifiers are opaque and remain stable across explicit replacement.
+    context_id = Column(String(64), primary_key=True)
+    raw_schema_json = Column(Text, nullable=False)
+    schema_description_json = Column(Text, nullable=False)
+    rules_text = Column(Text, nullable=False)
+    sql_dialect = Column(String(100), nullable=False)
+    schema_filename = Column(String(255))
+    rules_filename = Column(String(255))
+    created_at = Column(DateTime, nullable=False, index=True)
+    last_used_at = Column(DateTime, nullable=False, index=True)

@@ -456,7 +456,7 @@
             <div class="loading-content">
                 <div class="spinner"></div>
                 <div id="loadingProgress"></div>
-                <button type="button" id="stopLoadingBtn" onclick="stopTask()">Stop</button>
+                <button type="button" id="stopLoadingBtn" data-action="stop-task">Stop</button>
             </div>
         </div>
         <div class="container">
@@ -477,10 +477,10 @@
 
             <div class="main-content">
                 <div class="form-section">
-                    <form action="/run" method="post" enctype="multipart/form-data" onsubmit="showLoading()">
+                    <form action="/run" method="post" enctype="multipart/form-data" data-analysis-form>
                         <div class="form-group">
                             <label for="flow">Flow:</label>
-                            <select id="flow" name="flow" onchange="toggleFields()">
+                            <select id="flow" name="flow" data-flow-select>
                                 <option value="rule_analysis" {% if selected_flow == 'rule_analysis' %} selected {% endif %}>One Rule Analysis</option>
                                 <option value="all_rules_analysis" {% if selected_flow == 'all_rules_analysis' %} selected {% endif %}>All Rules Analysis</option>
                                 <option value="question_analysis" {% if selected_flow == 'question_analysis' %} selected {% endif %}>Question Analysis</option>
@@ -488,6 +488,11 @@
                             </select>
                         </div>
 
+                        <div class="form-group">
+                                <label for="context_id">Cached Context ID (optional):</label>
+                                <input type="text" id="context_id" name="context_id" value="{% if form_values %}{{ form_values.context_id }}{% endif %}">
+                                <small>Leave blank to create a new cached context from uploads.</small>
+                            </div>
                         <div id="context_fields">
                             <div class="form-group">
                                 <label for="schema_file">Schema JSON:</label>
@@ -528,7 +533,7 @@
 
                         <div class="button-group">
                             <button type="submit">Run Analysis</button>
-                            <button type="button" class="clear-btn" onclick="clearAndRedirect()">Clear</button>
+                            <button type="button" class="clear-btn" data-action="clear">Clear</button>
                         </div>
                     </form>
                 </div>
@@ -537,7 +542,7 @@
                     <details id="rules_details">
                         <summary>
                             <strong>Rules</strong>
-                            <button type="button" onclick="copyBlock('rules_details', this)">Copy</button>
+                            <button type="button" data-copy-target="rules_details">Copy</button>
                         </summary>
                         <pre id="rules_pre">{% if rules_text %}{{ rules_text }}{% else %}{% endif %}</pre>
                     </details>
@@ -545,7 +550,7 @@
                     <details id="schema_details">
                         <summary>
                             <strong>Schema Description</strong>
-                            <button type="button" onclick="copyBlock('schema_details', this)">Copy</button>
+                            <button type="button" data-copy-target="schema_details">Copy</button>
                         </summary>
                         <pre id="schema_pre">{% if schema_json %}{{ schema_json }}{% else %}{% endif %}</pre>
                     </details>
@@ -554,7 +559,7 @@
                     <details id="guidelines_details">
                         <summary>
                             <strong>Guidelines</strong>
-                            <button type="button" onclick="copyBlock('guidelines_details', this)">Copy</button>
+                            <button type="button" data-copy-target="guidelines_details">Copy</button>
                         </summary>
                         <pre id="guidelines_pre">{% if guidelines_text %}{{ guidelines_text }}{% else %}{% endif %}</pre>
                     </details>
@@ -591,302 +596,9 @@
             <div class="result error" id="async_error" style="display:none;"></div>
         </div>
 
-        <script>
-        function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        function toggleFields() {
-            var flow = document.getElementById('flow').value;
-            var ruleField = document.getElementById('new_rule_field');
-            var questionField = document.getElementById('question_field');
-            var problemField = document.getElementById('problem_field');
-            var guidelines = document.getElementById('guidelines_details');
-            if (flow === 'rule_analysis') {
-                ruleField.style.display = 'block';
-                questionField.style.display = 'none';
-                if (problemField) problemField.style.display = 'none';
-                if (guidelines) guidelines.style.display = 'block';
-            } else if (flow === 'all_rules_analysis') {
-                // For all-rules analysis only the uploaded context is needed
-                ruleField.style.display = 'none';
-                questionField.style.display = 'none';
-                if (problemField) problemField.style.display = 'none';
-                if (guidelines) guidelines.style.display = 'block';
-            } else if (flow === 'rule_generation') {
-                // For rule generation show question and problem inputs
-                ruleField.style.display = 'none';
-                questionField.style.display = 'block';
-                if (problemField) problemField.style.display = 'block';
-                if (guidelines) guidelines.style.display = 'block';
-            } else {
-                ruleField.style.display = 'none';
-                questionField.style.display = 'block';
-                if (problemField) problemField.style.display = 'none';
-                if (guidelines) guidelines.style.display = 'none';
-            }
-        }
-
-        // Copy the innerText of the <pre> inside the named details block.
-        function copyBlock(detailsId, btn) {
-            var pre = document.querySelector('#' + detailsId + ' pre');
-            if (!pre) return;
-            var text = pre.innerText;
-            navigator.clipboard.writeText(text).then(function () {
-                var old = btn.innerText;
-                btn.innerText = 'Copied!';
-                setTimeout(function () { btn.innerText = old; }, 1200);
-            }, function (err) {
-                console.error('Copy failed', err);
-            });
-        }
-
-        // Clear only the main form fields and redirect to the index page
-        function clearAndRedirect() {
-            try {
-                var flow = document.getElementById('flow');
-                if (flow) flow.selectedIndex = 0; // reset to first option
-                var ids = ['new_rule', 'question', 'problem'];
-                ids.forEach(function(id) {
-                    var el = document.getElementById(id);
-                    if (el) el.value = '';
-                });
-                var dialect = document.getElementById('sql_dialect');
-                if (dialect) dialect.value = 'PostgreSQL';
-                var schemaFile = document.getElementById('schema_file');
-                if (schemaFile) schemaFile.value = '';
-                var rulesFile = document.getElementById('rules_file');
-                if (rulesFile) rulesFile.value = '';
-            } catch (e) {
-                // ignore
-            }
-            window.location.href = '/';
-        }
-</script>
-<script>
-        document.addEventListener('DOMContentLoaded', function () {
-            try { toggleFields(); } catch (e) { /* ignore if missing */ }
-        });
-</script>
-<script>
-// Paging for all_rules_analysis results passed as JSON list in `result_pages_json`
-var pages = [];
-var current = 0;
-var ruleIndexMap = {};
-var pager = document.getElementById('result_pager');
-var container = document.getElementById('result_container');
-var prevBtn = document.getElementById('prev_page');
-var nextBtn = document.getElementById('next_page');
-var indicator = document.getElementById('page_indicator');
-var gotoInput = document.getElementById('goto_input');
-var gotoBtn = document.getElementById('goto_btn');
-
-function updateRuleIndex(startIndex) {
-    for (var i = startIndex; i < pages.length; i++) {
-        var html = pages[i] || '';
-        var m = html.match(/Rule\s*#\s*(\d+)/i);
-        if (m && m[1]) {
-            ruleIndexMap[String(m[1])] = i;
-        }
-    }
-}
-
-function renderPage(i) {
-    if (!container || !pages.length) return;
-    container.innerHTML = pages[i];
-
-    var pageHtml = pages[i] || '';
-    var ruleId = null;
-    var m = pageHtml.match(/Rule\s*#\s*(\d+)/i);
-    if (m && m[1]) {
-        ruleId = m[1];
-    }
-
-    if (indicator) indicator.innerText = (i + 1) + ' / ' + pages.length;
-    var titleEl = document.getElementById('page_title_top');
-    if (titleEl) {
-        if (ruleId) titleEl.innerText = 'Rule #' + ruleId;
-        else titleEl.innerText = 'Rule ' + (i + 1);
-    }
-
-    if (prevBtn) prevBtn.disabled = i === 0;
-    if (nextBtn) nextBtn.disabled = i === pages.length - 1;
-    if (gotoInput) gotoInput.value = ruleId ? String(ruleId) : (i + 1);
-}
-
-function updatePagerVisibility() {
-    if (pager) pager.style.display = pages.length > 1 ? 'block' : 'none';
-}
-
-function addPages(newPages) {
-    if (!newPages || !newPages.length) return;
-    var startIndex = pages.length;
-    newPages.forEach(function(p) { pages.push(p); });
-    updateRuleIndex(startIndex);
-    if (pages.length === newPages.length) {
-        current = 0;
-    }
-    updatePagerVisibility();
-    renderPage(Math.min(current, pages.length - 1));
-}
-
-function resetResultsView(message) {
-    pages = [];
-    current = 0;
-    ruleIndexMap = {};
-    if (container) container.innerHTML = message || '<pre>Stopped.</pre>';
-    var titleEl = document.getElementById('page_title_top');
-    if (titleEl) titleEl.innerText = '';
-    updatePagerVisibility();
-}
-
-if (prevBtn) {
-    prevBtn.addEventListener('click', function() {
-        if (current > 0) {
-            current -= 1;
-            renderPage(current);
-        }
-    });
-}
-if (nextBtn) {
-    nextBtn.addEventListener('click', function() {
-        if (current < pages.length - 1) {
-            current += 1;
-            renderPage(current);
-        }
-    });
-}
-if (gotoBtn && gotoInput) {
-    gotoBtn.addEventListener('click', function() {
-        var raw = gotoInput.value;
-        if (!raw) return;
-        var asNum = parseInt(raw, 10);
-        var idx = null;
-
-        if (!isNaN(asNum) && ruleIndexMap.hasOwnProperty(String(asNum))) {
-            idx = ruleIndexMap[String(asNum)];
-        } else if (!isNaN(asNum)) {
-            alert('No conflicts in this rule');
-        } else if (ruleIndexMap.hasOwnProperty(raw)) {
-            idx = ruleIndexMap[raw];
-        }
-
-        if (idx === null) return;
-        current = idx;
-        renderPage(current);
-    });
-}
-
-{% if result_pages_json %}
-try {
-    var initialPages = {{ result_pages_json|safe }};
-    if (Array.isArray(initialPages)) {
-        addPages(initialPages);
-    }
-} catch (e) {
-    // ignore
-}
-{% endif %}
-</script>
-<script>
-{% if task_id %}
-var taskId = "{{ task_id }}";
-var nextIndex = 0;
-var pollIntervalMs = 3000;
-var pollTimer = null;
-var pollStopped = false;
-var pollController = null;
-
-function applyContext(data) {
-    if (data.rules_text) {
-        var rulesPre = document.getElementById('rules_pre');
-        if (rulesPre && !rulesPre.innerText) rulesPre.innerText = data.rules_text;
-    }
-    if (data.schema_json) {
-        var schemaPre = document.getElementById('schema_pre');
-        if (schemaPre && !schemaPre.innerText) schemaPre.innerText = data.schema_json;
-    }
-    if (data.guidelines_text) {
-        var guidelinesPre = document.getElementById('guidelines_pre');
-        if (guidelinesPre && !guidelinesPre.innerText) guidelinesPre.innerText = data.guidelines_text;
-    }
-}
-
-function updateProgress(data) {
-    var progress = document.getElementById('loadingProgress');
-    if (!progress) return;
-    if (data.total_rules) {
-        progress.innerText = 'Analyzing rules: ' + data.completed_rules + ' / ' + data.total_rules;
-    } else {
-        progress.innerText = 'Preparing analysis...';
-    }
-}
-
-function showAsyncError(message) {
-    var box = document.getElementById('async_error');
-    if (!box) return;
-    box.style.display = 'block';
-    box.innerHTML = '<h2>Error</h2><p>' + message + '</p>';
-}
-
-function pollTask() {
-    if (pollStopped) return;
-    pollController = new AbortController();
-    fetch('/tasks/' + taskId + '?from_index=' + nextIndex, { signal: pollController.signal })
-        .then(function(resp) { return resp.json(); })
-        .then(function(data) {
-            if (pollStopped) return;
-            if (!data || data.status === 'failed') {
-                if (data && data.error) showAsyncError(data.error);
-                document.getElementById('loadingOverlay').style.display = 'none';
-                if (pollTimer) clearTimeout(pollTimer);
-                return;
-            }
-
-            applyContext(data);
-            updateProgress(data);
-            if (data.pages && data.pages.length) {
-                addPages(data.pages);
-                nextIndex = data.next_index || nextIndex + data.pages.length;
-            }
-
-            if (data.status === 'completed') {
-                document.getElementById('loadingOverlay').style.display = 'none';
-                if (pollTimer) clearTimeout(pollTimer);
-                return;
-            }
-            if (data.status === 'cancelled') {
-                document.getElementById('loadingOverlay').style.display = 'none';
-                if (pollTimer) clearTimeout(pollTimer);
-                return;
-            }
-
-            pollTimer = setTimeout(pollTask, pollIntervalMs);
-        })
-        .catch(function(err) {
-            if (pollStopped || (err && err.name === 'AbortError')) return;
-            console.error('Polling failed', err);
-            pollTimer = setTimeout(pollTask, pollIntervalMs);
-        });
-}
-
-function stopTask() {
-    pollStopped = true;
-    if (pollTimer) clearTimeout(pollTimer);
-    if (pollController) pollController.abort();
-    if (taskId) {
-        fetch('/tasks/' + taskId + '/cancel', { method: 'POST' }).catch(function() {});
-    }
-    document.getElementById('loadingOverlay').style.display = 'none';
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('loadingOverlay').style.display = 'flex';
-    updateProgress({});
-    pollTask();
-});
-{% endif %}
-</script>
+        <script id="context-doctor-config" type="application/json">{{ {"taskId": task_id|default(None), "initialPages": result_pages_json|default("[]")|fromjson}|tojson }}</script>
+        <script src="/static/helpers.js" defer></script>
+        <script src="/static/index.js" defer></script>
 </body>
 
 </html>

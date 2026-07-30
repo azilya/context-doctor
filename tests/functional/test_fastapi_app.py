@@ -128,9 +128,8 @@ def test_run_all_rules_starts_task_and_renders_polling_state(
     assert_response_contains(
         response,
         "Waiting for results",
-        'var taskId = "task-123";',
-        "pollTask()",
-        "stopTask()",
+        '"taskId": "task-123"',
+        'src="/static/index.js"',
     )
     start_all_rules_analysis.assert_called_once()
     (started_context,), _ = start_all_rules_analysis.call_args
@@ -150,6 +149,7 @@ def test_run_all_rules_starts_task_and_renders_polling_state(
             "schema_filename": "schema.json",
             "rules_filename": "rules.md",
             "sql_dialect": "PostgreSQL",
+            "context_id": started_context.context_id,
         },
         client_backend_url="",
         user_agent="testclient",
@@ -244,9 +244,8 @@ def test_api_run_alias_preserves_all_rules_async_contract(
     assert_response_contains(
         response,
         "Waiting for results",
-        'var taskId = "task-api-123";',
-        "pollTask()",
-        "stopTask()",
+        '"taskId": "task-api-123"',
+        'src="/static/index.js"',
     )
     start_all_rules_analysis.assert_called_once()
     (started_context,), _ = start_all_rules_analysis.call_args
@@ -263,6 +262,7 @@ def test_api_run_alias_preserves_all_rules_async_contract(
             "schema_filename": "schema.json",
             "rules_filename": "rules.md",
             "sql_dialect": "PostgreSQL",
+            "context_id": started_context.context_id,
         },
         client_backend_url="",
         user_agent="testclient",

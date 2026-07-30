@@ -33,6 +33,8 @@ async def run_analysis_view(
     sql_dialect: str = Form("PostgreSQL"),
     schema_file: UploadFile | None = File(None),
     rules_file: UploadFile | None = File(None),
+    context_id: str | None = Form(None),
+    replace_context: bool = Form(False),
 ):
     """Run the selected analysis flow and render the result page.
 
@@ -45,6 +47,8 @@ async def run_analysis_view(
         sql_dialect: SQL dialect label to attach to uploaded context.
         schema_file: Optional uploaded schema file.
         rules_file: Optional uploaded rules file.
+        context_id: Existing cached context to reuse or explicitly replace.
+        replace_context: Whether uploads replace the supplied cached context.
 
     Returns:
         Rendered main page containing either sync results or an async task id.
@@ -57,6 +61,7 @@ async def run_analysis_view(
     cleaned_question = _strip_or_none(question)
     cleaned_problem = _strip_or_none(problem)
     cleaned_sql_dialect = _strip_or_none(sql_dialect) or ""
+    cleaned_context_id = _strip_or_none(context_id)
 
     # Capture request metadata once for history records.
     user_agent = request.headers.get("user-agent")
@@ -73,14 +78,27 @@ async def run_analysis_view(
     }
 
     try:
-        # Parse uploaded files into the trusted analysis context boundary object.
-        analysis_context = fastapi_app.ContextStore.from_uploads(
-            schema_content=await schema_file.read() if schema_file else b"",
-            rules_content=await rules_file.read() if rules_file else b"",
-            sql_dialect=cleaned_sql_dialect,
-            schema_filename=schema_file.filename if schema_file else None,
-            rules_filename=rules_file.filename if rules_file else None,
-        )
+        # Reuse requires no file reads; an upload always creates a new identity
+        # unless the caller opts into explicit replacement semantics.
+        if cleaned_context_id and not schema_file and not rules_file:
+            analysis_context = fastapi_app.ContextService.get(cleaned_context_id)
+            if analysis_context is None:
+                raise ValueError(f"Context not found: {cleaned_context_id}")
+        else:
+            analysis_context = fastapi_app.ContextService.from_uploads(
+                schema_content=await schema_file.read() if schema_file else b"",
+                rules_content=await rules_file.read() if rules_file else b"",
+                sql_dialect=cleaned_sql_dialect,
+                schema_filename=schema_file.filename if schema_file else None,
+                rules_filename=rules_file.filename if rules_file else None,
+            )
+            analysis_context = fastapi_app.ContextService.save(
+                analysis_context,
+                replace_context_id=cleaned_context_id if replace_context else None,
+            )
+        # History input JSON carries the stable identifier for run-to-context
+        # traceability without making history availability critical to analysis.
+        input_params["context_id"] = analysis_context.context_id
         cleaned = fastapi_app.AnalysisParams(
             flow=cleaned_flow,
             context=analysis_context,
@@ -122,6 +140,7 @@ async def run_analysis_view(
                     "sql_dialect": cleaned_sql_dialect,
                     "schema_filename": analysis_context.schema_filename or "",
                     "rules_filename": analysis_context.rules_filename or "",
+                    "context_id": analysis_context.context_id or "",
                 },
                 "task_id": task_id,
             }
@@ -181,6 +200,7 @@ async def run_analysis_view(
             "sql_dialect": cleaned_sql_dialect,
             "schema_filename": analysis_context.schema_filename or "",
             "rules_filename": analysis_context.rules_filename or "",
+            "context_id": analysis_context.context_id or "",
         }
 
         template_context = {
@@ -215,6 +235,7 @@ async def run_analysis_view(
             "sql_dialect": cleaned_sql_dialect,
             "schema_filename": schema_file.filename if schema_file else "",
             "rules_filename": rules_file.filename if rules_file else "",
+            "context_id": cleaned_context_id or "",
         }
         return fastapi_app.templates.TemplateResponse(
             "index.html",
@@ -252,6 +273,44 @@ async def task_status(task_id: str, from_index: int = 0):
     if not status:
         raise HTTPException(status_code=404, detail="Task not found")
     return status
+
+
+@router.post("/api/tasks/rule-analysis")
+async def start_rule_analysis_task(
+    context_id: str = Form(...), new_rule: str = Form(...)
+):
+    """Start one proposed-rule analysis through the task manager.
+
+    Args:
+        context_id: Previously created immutable context identifier.
+        new_rule: Proposed SQL-generation rule.
+
+    Returns:
+        Pending task identity for the standard polling endpoint.
+
+    Raises:
+        HTTPException: If the cached context does not exist.
+    """
+    from context_doctor import fastapi_app
+
+    context = fastapi_app.ContextService.get(context_id.strip())
+    if context is None:
+        raise HTTPException(status_code=404, detail="Context not found")
+    # This opt-in API completes the task-manager migration while the legacy
+    # browser POST remains synchronous for compatibility.
+    task_id = fastapi_app.task_manager.start_rule_analysis(context, new_rule)
+    try:
+        fastapi_app.HistoryService.start_async_execution(
+            task_id=task_id,
+            flow_type="rule_analysis",
+            input_params={
+                "context_id": context.context_id,
+                "new_rule": new_rule.strip(),
+            },
+        )
+    except Exception:
+        fastapi_app.logger.exception("History logging failed (non-critical)")
+    return {"task_id": task_id, "status": "pending"}
 
 
 @router.post("/api/tasks/{task_id}/cancel")
@@ -300,6 +359,87 @@ async def history_stats(days: int = 7):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/api/contexts")
+async def create_context(
+    schema_file: UploadFile = File(...),
+    rules_file: UploadFile = File(...),
+    sql_dialect: str = Form(...),
+    replace_context_id: str | None = Form(None),
+):
+    """Create or explicitly replace a reusable analysis context.
+
+    Args:
+        schema_file: Uploaded schema JSON.
+        rules_file: Uploaded rules text.
+        sql_dialect: SQL dialect for the context.
+        replace_context_id: Existing identifier to replace, when desired.
+
+    Returns:
+        Context identity and normalized metadata.
+    """
+    from context_doctor import fastapi_app
+
+    # The API shares exactly the same validation/persistence boundary as the
+    # browser form, preventing divergent cache formats.
+    context = fastapi_app.ContextService.from_uploads(
+        await schema_file.read(),
+        await rules_file.read(),
+        sql_dialect,
+        schema_file.filename,
+        rules_file.filename,
+    )
+    try:
+        context = fastapi_app.ContextService.save(context, replace_context_id)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {
+        "context_id": context.context_id,
+        "schema_filename": context.schema_filename,
+        "rules_filename": context.rules_filename,
+        "sql_dialect": context.sql_dialect,
+    }
+
+
+@router.get("/api/contexts/{context_id}")
+async def get_context(context_id: str):
+    """Return safe metadata for a reusable context.
+
+    Args:
+        context_id: Persistent context identifier.
+
+    Returns:
+        Context metadata without exposing full uploaded content.
+    """
+    from context_doctor import fastapi_app
+
+    context = fastapi_app.ContextService.get(context_id)
+    if context is None:
+        raise HTTPException(status_code=404, detail="Context not found")
+    return {
+        "context_id": context.context_id,
+        "schema_filename": context.schema_filename,
+        "rules_filename": context.rules_filename,
+        "sql_dialect": context.sql_dialect,
+    }
+
+
+@router.delete("/api/contexts/{context_id}")
+async def delete_context(context_id: str):
+    """Delete a reusable context.
+
+    Args:
+        context_id: Persistent context identifier.
+
+    Returns:
+        Deletion confirmation.
+    """
+    from context_doctor import fastapi_app
+
+    if not fastapi_app.ContextService.delete(context_id):
+        raise HTTPException(status_code=404, detail="Context not found")
+    return {"status": "deleted", "context_id": context_id}
+
+
 @router.delete("/api/history/{entry_id}")
 async def delete_history_entry(entry_id: int):
     """Delete a history entry.
@@ -327,3 +467,20 @@ async def delete_history_entry(entry_id: int):
     except Exception as e:
         fastapi_app.logger.exception("Failed to delete history entry")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/tools/sql-dialect-docs")
+async def validate_sql_dialect_docs(dialect: str):
+    """Run the official SQL-dialect documentation validation tool.
+
+    Args:
+        dialect: SQL dialect name to validate.
+
+    Returns:
+        Structured tool result suitable for agentic orchestration.
+    """
+    from context_doctor.services.dialect_docs import check_dialect_documentation
+
+    # The endpoint exposes a concrete, independently callable tool; analysis
+    # prompts are deliberately not changed or granted implicit network access.
+    return check_dialect_documentation(dialect).to_dict()

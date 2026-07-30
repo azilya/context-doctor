@@ -98,7 +98,9 @@ def test_analyze_one_skips_empty_results(monkeypatch: pytest.MonkeyPatch):
         {"Category": "guideline_violations", "Details": ""},
     ]
     analyze_single_rule_pipeline = Mock(return_value=empty_result)
-    prettify_html = Mock(side_effect=AssertionError("empty results should not render HTML"))
+    prettify_html = Mock(
+        side_effect=AssertionError("empty results should not render HTML")
+    )
     monkeypatch.setattr(
         task_manager, "analyze_single_rule_pipeline", analyze_single_rule_pipeline
     )

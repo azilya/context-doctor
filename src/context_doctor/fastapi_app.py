@@ -3,9 +3,10 @@ import logging
 from importlib import resources
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from .context_store import ContextStore
+from .services.context_service import ContextService
 from .database.repository import HistoryRepository
 from .database.session import get_db_session, init_db
 from .logic import AnalysisParams, run_analysis
@@ -13,6 +14,7 @@ from .services.history_service import HistoryService
 from .task_manager import TaskManager
 from .utils import prettify_html
 from .routers import api, web
+from . import settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +24,21 @@ templates = Jinja2Templates(
 )
 templates.env.filters["fromjson"] = json.loads
 task_manager = TaskManager()
+# Compatibility alias remains available to integrations during the rename.
+ContextStore = ContextService
+# Package-relative static mounting keeps wheel and Docker installations runnable
+# without depending on the process working directory.
+app.mount(
+    "/static",
+    StaticFiles(directory=str(resources.files("context_doctor").joinpath("static"))),
+    name="static",
+)
 app.include_router(web.router)
 app.include_router(api.router)
 
 __all__ = [
     "AnalysisParams",
+    "ContextService",
     "ContextStore",
     "HistoryRepository",
     "HistoryService",
@@ -45,6 +57,9 @@ async def startup_event():
     """Initialize database on application startup."""
     try:
         init_db()
+        # Bound cache growth during each startup; expiry failures remain
+        # non-critical like history initialization failures.
+        ContextService.delete_expired(settings.CONTEXT_CACHE_TTL_SECONDS)
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.exception(f"Failed to initialize database: {e}")
