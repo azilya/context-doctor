@@ -28,13 +28,14 @@
 
 ## Deferred Checks
 
-- Browser-only automation - deferred: Playwright is not needed for current workflow coverage; add it only when testing browser-only behavior such as file picker labels, flow field switching, copy buttons, collapsibles, async DOM polling, stop/cancel UI, pagination/goto, or history-detail delete redirects.
+- Browser integration - completed: Playwright drives the real FastAPI form through all four flow selections, multipart schema/rules upload, conditional rule/question/problem fields, and all-rules task polling to completed DOM state. It also verifies that the cached context returned after upload can run a new rule, a new question, a new generation problem, or a complete all-rules rerun without reselecting either file.
 - Live LLM smoke tests - deferred: run only deliberately with real credentials.
 - Production-style runtime checks - deferred: direct Uvicorn, `./start.sh`, Docker build/run, and environment-specific SQLite path behavior remain manual.
 
 ## Local Commands
 
 - Install dependencies: `uv sync`.
+- Install the local browser runtime once: `uv run playwright install chromium`.
 - Run tests: `uv run pytest`.
 - Run lint: `uv run ruff check .`.
 - Format when needed: `uv run ruff format .`.
