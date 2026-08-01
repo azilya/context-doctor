@@ -62,6 +62,8 @@ async def run_analysis_view(
     cleaned_problem = _strip_or_none(problem)
     cleaned_sql_dialect = _strip_or_none(sql_dialect) or ""
     cleaned_context_id = _strip_or_none(context_id)
+    has_schema_upload = bool(schema_file and schema_file.filename)
+    has_rules_upload = bool(rules_file and rules_file.filename)
 
     # Capture request metadata once for history records.
     user_agent = request.headers.get("user-agent")
@@ -72,25 +74,25 @@ async def run_analysis_view(
         "new_rule": cleaned_new_rule,
         "question": cleaned_question,
         "problem": cleaned_problem,
-        "schema_filename": schema_file.filename if schema_file else None,
-        "rules_filename": rules_file.filename if rules_file else None,
+        "schema_filename": schema_file.filename if has_schema_upload else None,
+        "rules_filename": rules_file.filename if has_rules_upload else None,
         "sql_dialect": cleaned_sql_dialect,
     }
 
     try:
         # Reuse requires no file reads; an upload always creates a new identity
         # unless the caller opts into explicit replacement semantics.
-        if cleaned_context_id and not schema_file and not rules_file:
+        if cleaned_context_id and not has_schema_upload and not has_rules_upload:
             analysis_context = fastapi_app.ContextService.get(cleaned_context_id)
             if analysis_context is None:
                 raise ValueError(f"Context not found: {cleaned_context_id}")
         else:
             analysis_context = fastapi_app.ContextService.from_uploads(
-                schema_content=await schema_file.read() if schema_file else b"",
-                rules_content=await rules_file.read() if rules_file else b"",
+                schema_content=await schema_file.read() if has_schema_upload else b"",
+                rules_content=await rules_file.read() if has_rules_upload else b"",
                 sql_dialect=cleaned_sql_dialect,
-                schema_filename=schema_file.filename if schema_file else None,
-                rules_filename=rules_file.filename if rules_file else None,
+                schema_filename=schema_file.filename if has_schema_upload else None,
+                rules_filename=rules_file.filename if has_rules_upload else None,
             )
             analysis_context = fastapi_app.ContextService.save(
                 analysis_context,
@@ -233,8 +235,8 @@ async def run_analysis_view(
             "question": cleaned_question or "",
             "problem": cleaned_problem or "",
             "sql_dialect": cleaned_sql_dialect,
-            "schema_filename": schema_file.filename if schema_file else "",
-            "rules_filename": rules_file.filename if rules_file else "",
+            "schema_filename": schema_file.filename if has_schema_upload else "",
+            "rules_filename": rules_file.filename if has_rules_upload else "",
             "context_id": cleaned_context_id or "",
         }
         return fastapi_app.templates.TemplateResponse(

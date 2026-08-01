@@ -5,6 +5,16 @@ function showLoading() {
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
 
+        function toggleContextUploadRequirement() {
+            var contextId = document.getElementById('context_id');
+            var schemaFile = document.getElementById('schema_file');
+            var rulesFile = document.getElementById('rules_file');
+            if (!contextId || !schemaFile || !rulesFile) return;
+            var hasCachedContext = contextId.value.trim() !== '';
+            schemaFile.required = !hasCachedContext;
+            rulesFile.required = !hasCachedContext;
+        }
+
         function toggleFields() {
             var flow = document.getElementById('flow').value;
             var ruleField = document.getElementById('new_rule_field');
@@ -73,7 +83,15 @@ function showLoading() {
         }
 
 document.addEventListener('DOMContentLoaded', function () {
-            try { toggleFields(); } catch (e) { /* ignore if missing */ }
+            try {
+                toggleFields();
+                toggleContextUploadRequirement();
+                var contextId = document.getElementById('context_id');
+                if (contextId) {
+                    contextId.addEventListener('input', toggleContextUploadRequirement);
+                    contextId.addEventListener('change', toggleContextUploadRequirement);
+                }
+            } catch (e) { /* ignore if missing */ }
         });
 
 // Paging for all_rules_analysis results passed as JSON list in `result_pages_json`
