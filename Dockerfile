@@ -22,7 +22,7 @@ COPY pyproject.toml README.md LICENSE /app/
 COPY src/context_doctor /app/src/context_doctor
 
 # Upgrade pip and install the package (pyproject.toml defines dependencies)
-RUN python -m pip install--upgrade pip setuptools wheel \
+RUN python -m pip install --upgrade pip setuptools wheel \
     && pip install --no-cache  .
 
 # Default port for uvicorn
