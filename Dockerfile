@@ -9,8 +9,6 @@ ENV PYTHONUNBUFFERED=1
 # Max concurrent threads for handling requests
 ENV MAX_CONCURRENT_RULE_ANALYSES=3
 ENV CONTEXT_DOCTOR_DB_PATH=/data/context_doctor_history.db
-ENV MAX_CONCURRENT_RULE_ANALYSES=3
-ENV CONTEXT_DOCTOR_DB_PATH=/data/context_doctor_history.db
 
 WORKDIR /app
 
@@ -29,11 +27,6 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 
 # Default port for uvicorn
 EXPOSE 8000
-
-RUN adduser local \
-    && mkdir -p /data \
-    && chown local:local /data
-USER local
 
 RUN adduser local \
     && mkdir -p /data \
