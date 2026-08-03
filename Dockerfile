@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Max concurrent threads for handling requests
-ENV MAX_CONCURRENT_RULE_ANALYSES=1
+ENV MAX_CONCURRENT_RULE_ANALYSES=3
 ENV CONTEXT_DOCTOR_DB_PATH=/data/context_doctor_history.db
 
 WORKDIR /app
@@ -22,8 +22,8 @@ COPY pyproject.toml README.md LICENSE /app/
 COPY src/context_doctor /app/src/context_doctor
 
 # Upgrade pip and install the package (pyproject.toml defines dependencies)
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && pip install .
+RUN python -m pip install--upgrade pip setuptools wheel \
+    && pip install --no-cache  .
 
 # Default port for uvicorn
 EXPOSE 8000
