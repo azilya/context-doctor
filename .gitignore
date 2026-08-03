@@ -18,7 +18,6 @@ env/
 *.db
 *.sqlite
 *.sqlite3
-context_doctor_history.db*
 
 # Logs and local artifacts
 *.log
