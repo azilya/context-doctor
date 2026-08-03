@@ -1,9 +1,8 @@
 """Deterministic tool for validating official SQL-dialect documentation links."""
 
 from dataclasses import asdict, dataclass
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
+import requests
 
 OFFICIAL_DIALECT_DOCS = {
     "postgresql": "https://www.postgresql.org/docs/current/sql.html",
@@ -56,12 +55,16 @@ def check_dialect_documentation(
         )
 
     # A real HTTP boundary makes this an actionable tool rather than another LLM
-    # prompt. Automated tests replace urlopen and never make live requests.
-    request = Request(url, method="HEAD", headers={"User-Agent": "context-doctor/0.1"})
+    # prompt. Automated tests replace requests.head and never make live requests.
     try:
-        with urlopen(request, timeout=timeout) as response:  # noqa: S310
-            valid = 200 <= response.status < 400
-    except (HTTPError, URLError, TimeoutError) as exc:
+        response = requests.head(
+            url,
+            headers={"User-Agent": "context-doctor/0.1"},
+            timeout=timeout,
+            allow_redirects=True,
+        )
+        valid = 200 <= response.status_code < 400
+    except requests.RequestException as exc:
         return DialectDocumentationResult(
             dialect=dialect.strip(),
             url=url,
