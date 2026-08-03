@@ -472,7 +472,7 @@ async def delete_history_entry(entry_id: int):
 
 
 @router.get("/api/tools/sql-dialect-docs")
-async def validate_sql_dialect_docs(dialect: str):
+def validate_sql_dialect_docs(dialect: str):
     """Run the official SQL-dialect documentation validation tool.
 
     Args:

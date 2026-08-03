@@ -16,20 +16,21 @@ def test_official_current_documentation_is_checked(monkeypatch):
     """Registered docs are probed at their official current-version URL."""
 
     class Response:
-        status = 200
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return None
+        status_code = 200
 
     calls = []
     monkeypatch.setattr(
         dialect_docs,
-        "urlopen",
-        lambda request, timeout: (
-            calls.append((request.full_url, timeout)) or Response()
+        "requests",
+        type(
+            "Requests",
+            (),
+            {
+                "head": staticmethod(
+                    lambda url, **kwargs: (calls.append((url, kwargs)) or Response())
+                ),
+                "RequestException": Exception,
+            },
         ),
     )
 
@@ -37,4 +38,13 @@ def test_official_current_documentation_is_checked(monkeypatch):
 
     assert result.valid is True
     assert result.current is True
-    assert calls == [("https://www.postgresql.org/docs/current/sql.html", 1)]
+    assert calls == [
+        (
+            "https://www.postgresql.org/docs/current/sql.html",
+            {
+                "headers": {"User-Agent": "context-doctor/0.1"},
+                "timeout": 1,
+                "allow_redirects": True,
+            },
+        )
+    ]
