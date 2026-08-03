@@ -1,9 +1,9 @@
 from unittest.mock import Mock
 
-from context_doctor import (
-    question_analysis_flow,
-    rule_analysis_flow,
-    rule_generation_flow,
+from context_doctor.flows import (
+    question_analysis as question_analysis_flow,
+    rule_analysis as rule_analysis_flow,
+    rule_generation as rule_generation_flow,
 )
 from context_doctor.utils import prettify_html
 
@@ -99,17 +99,19 @@ def test_question_formatting_joins_lists_and_descriptions(
 
 
 def test_question_beautify_result_has_stable_category_order():
-    rows = question_analysis_flow.beautify_result({
-        "comparison_analysis_summary": "Comparison summary",
-        "filtering_analysis_summary": "Filtering summary",
-        "question": "Question?",
-        "relevant_rules": "Rule #2",
-        "relevant_descriptions": "orders.revenue",
-        "typos": "",
-        "dialect_inconsistencies": "",
-        "contradictions": "",
-        "duplications": "",
-    })
+    rows = question_analysis_flow.beautify_result(
+        {
+            "comparison_analysis_summary": "Comparison summary",
+            "filtering_analysis_summary": "Filtering summary",
+            "question": "Question?",
+            "relevant_rules": "Rule #2",
+            "relevant_descriptions": "orders.revenue",
+            "typos": "",
+            "dialect_inconsistencies": "",
+            "contradictions": "",
+            "duplications": "",
+        }
+    )
 
     assert categories(rows) == [
         "question",
@@ -195,9 +197,11 @@ def test_rule_generation_pipeline_reorders_generation_summary(
 
 
 def test_prettify_html_escapes_values_and_preserves_newlines():
-    html = prettify_html([
-        {"Category": "new_rule", "Details": "<script>x</script>\nnext"},
-    ])
+    html = prettify_html(
+        [
+            {"Category": "new_rule", "Details": "<script>x</script>\nnext"},
+        ]
+    )
 
     assert '<table class="analysis-result-table">' in html
     assert "border=" not in html

@@ -13,6 +13,7 @@ dependencies = [
     "fastapi (>=0.119.1,<0.122.0)",
     "jinja2 (>=3.1.6,<4.0.0)",
     "python-multipart (>=0.0.20,<0.0.21)",
+    "requests (>=2.32.0,<3.0.0)",
     "sqlalchemy (>=2.0.0,<3.0.0)",
 ]
 
@@ -28,6 +29,7 @@ module-root = "src"
 
 [dependency-groups]
 dev = [
+    "playwright>=1.58.0,<2.0.0",
     "pytest>=9.0.3",
     "pytest-env>=1.6.0",
     "pytest-mock>=3.15.1",
@@ -38,4 +40,4 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--import-mode=importlib"]
+addopts = ["--import-mode=importlib", "--capture=no"]

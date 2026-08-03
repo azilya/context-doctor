@@ -26,13 +26,14 @@
 - Required env vars for LLM-backed flows: `BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL`.
 - Optional env vars: `MAX_CONCURRENT_RULE_ANALYSES` defaults to `1`; `DATABASE_URL` overrides SQLite; `CONTEXT_DOCTOR_DB_PATH` overrides the default SQLite path before `DATABASE_URL` is built.
 - Request context is supplied by uploading schema JSON, rules text, and SQL dialect on every `/run` request.
+- LLM-backed calls must be mocked in tests; do not use real API credentials or allow live OpenAI-compatible traffic.
 
 ## Execution Flow
 
 - Browser submits uploaded context and flow inputs to `POST /run` in `fastapi_app.py`; synchronous flows route through `logic.run_analysis()`.
-- `rule_analysis` calls `rule_analysis_flow.analyze_rule_pipeline()` for comparison plus guideline validation.
-- `question_analysis` calls `question_analysis_flow.filter_and_compare_question()` and does not return guideline text.
-- `rule_generation` calls `rule_generation_flow.generate_rule_pipeline()` with optional question text.
+- `rule_analysis` calls `flows.rule_analysis.analyze_rule_pipeline()` for comparison plus guideline validation.
+- `question_analysis` calls `flows.question_analysis.filter_and_compare_question()` and does not return guideline text.
+- `rule_generation` calls `flows.rule_generation.generate_rule_pipeline()` with optional question text.
 - `all_rules_analysis` is special: `fastapi_app.py` starts `TaskManager.start_all_rules_analysis()`, the frontend polls `GET /tasks/{task_id}`, and cancellation uses `POST /tasks/{task_id}/cancel`.
 
 ## Gotchas

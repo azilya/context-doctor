@@ -4,10 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from pydantic import BaseModel, Field
 
-from . import settings
-from .llm_client import parse_response
-from .package_resources import read_prompt_steps, read_text, render_prompt_messages
-from .utils import details_by_category, ordered_rows
+from .. import settings
+from ..llm_client import parse_response
+from ..package_resources import read_prompt_steps, read_text, render_prompt_messages
+from ..utils import details_by_category, ordered_rows
 
 
 class CategoryResult(BaseModel):

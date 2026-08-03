@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 
-from .llm_client import parse_response
-from .package_resources import read_prompt_steps, render_prompt_messages
-from .utils import ordered_rows
+from ..llm_client import parse_response
+from ..package_resources import read_prompt_steps, render_prompt_messages
+from ..utils import ordered_rows
 
 
 class QuestionAnalysis(BaseModel):
