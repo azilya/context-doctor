@@ -128,9 +128,8 @@ def test_run_all_rules_starts_task_and_renders_polling_state(
     assert_response_contains(
         response,
         "Waiting for results",
-        'var taskId = "task-123";',
-        "pollTask()",
-        "stopTask()",
+        '"taskId": "task-123"',
+        'src="/static/index.js"',
     )
     start_all_rules_analysis.assert_called_once()
     (started_context,), _ = start_all_rules_analysis.call_args
@@ -150,6 +149,120 @@ def test_run_all_rules_starts_task_and_renders_polling_state(
             "schema_filename": "schema.json",
             "rules_filename": "rules.md",
             "sql_dialect": "PostgreSQL",
+            "context_id": started_context.context_id,
+        },
+        client_backend_url="",
+        user_agent="testclient",
+        ip_address="testclient",
+    )
+    no_history_logging["start_sync_execution"].assert_not_called()
+
+
+def test_api_run_alias_preserves_sync_flow_contract(
+    monkeypatch,
+    no_history_logging,
+    api_client,
+    upload_files,
+):
+    captured_params = []
+
+    def fake_run_analysis(params):
+        captured_params.append(params)
+        return (
+            "api alias rendered result",
+            params.context.rules_text,
+            params.context.schema_description,
+            "api alias guidelines",
+        )
+
+    monkeypatch.setattr(fastapi_app, "run_analysis", fake_run_analysis)
+
+    response = api_client.post(
+        "/api/run",
+        data={
+            "flow": "rule_analysis",
+            "sql_dialect": "PostgreSQL",
+            "new_rule": "Rule #9: Use SUM(orders.revenue).",
+        },
+        files=upload_files,
+    )
+
+    assert_response_contains(response, "api alias rendered result", "Rule #1")
+    assert captured_params[0].flow == "rule_analysis"
+    no_history_logging["complete_sync_execution"].assert_called_once()
+
+
+def test_run_empty_sync_response_renders_error_with_empty_result_context(
+    monkeypatch,
+    no_history_logging,
+    post_run,
+):
+    monkeypatch.setattr(
+        fastapi_app,
+        "run_analysis",
+        Mock(side_effect=ValueError("rule_analysis returned an empty response")),
+    )
+
+    response = post_run(
+        {
+            "flow": "rule_analysis",
+            "sql_dialect": "PostgreSQL",
+            "new_rule": "Rule #9: Use SUM(orders.revenue).",
+        }
+    )
+
+    assert_response_contains(response, "rule_analysis returned an empty response")
+    assert 'id="analysis_result"' not in response.text
+    no_history_logging["complete_sync_execution"].assert_not_called()
+    no_history_logging["fail_execution"].assert_called_once()
+
+
+def test_api_run_alias_preserves_all_rules_async_contract(
+    monkeypatch,
+    no_history_logging,
+    api_client,
+    upload_files,
+):
+    start_all_rules_analysis = Mock(return_value="task-api-123")
+    monkeypatch.setattr(
+        fastapi_app,
+        "task_manager",
+        Mock(start_all_rules_analysis=start_all_rules_analysis),
+    )
+    monkeypatch.setattr(
+        fastapi_app,
+        "run_analysis",
+        Mock(side_effect=AssertionError("all_rules_analysis must start async task")),
+    )
+
+    response = api_client.post(
+        "/api/run",
+        data={"flow": "all_rules_analysis", "sql_dialect": "PostgreSQL"},
+        files=upload_files,
+    )
+
+    assert_response_contains(
+        response,
+        "Waiting for results",
+        '"taskId": "task-api-123"',
+        'src="/static/index.js"',
+    )
+    start_all_rules_analysis.assert_called_once()
+    (started_context,), _ = start_all_rules_analysis.call_args
+    assert started_context.sql_dialect == "PostgreSQL"
+    assert started_context.schema_filename == "schema.json"
+    assert started_context.rules_filename == "rules.md"
+    no_history_logging["start_async_execution"].assert_called_once_with(
+        task_id="task-api-123",
+        flow_type="all_rules_analysis",
+        input_params={
+            "new_rule": None,
+            "question": None,
+            "problem": None,
+            "schema_filename": "schema.json",
+            "rules_filename": "rules.md",
+            "sql_dialect": "PostgreSQL",
+            "context_id": started_context.context_id,
         },
         client_backend_url="",
         user_agent="testclient",
@@ -234,7 +347,10 @@ def test_run_context_boundary_errors_do_not_call_analysis_or_history(
 @pytest.mark.parametrize(
     ("data", "expected_error"),
     [
-        ({"flow": "rule_analysis", "sql_dialect": "PostgreSQL"}, "New rule is required"),
+        (
+            {"flow": "rule_analysis", "sql_dialect": "PostgreSQL"},
+            "New rule is required",
+        ),
         (
             {"flow": "question_analysis", "sql_dialect": "PostgreSQL"},
             "Question is required",
@@ -354,6 +470,42 @@ def test_task_status_returns_incremental_payload(monkeypatch, api_client):
     get_status.assert_called_once_with("task-123", from_index=1)
 
 
+def test_api_task_status_alias_returns_incremental_payload(monkeypatch, api_client):
+    task_status = {
+        "task_id": "task-123",
+        "status": "running",
+        "total_rules": 2,
+        "completed_rules": 1,
+        "pages": ["<p>Rule #1</p>"],
+        "next_index": 1,
+        "error": None,
+        "rules_text": "Rule #1",
+        "schema_json": "{}",
+        "guidelines_text": "GUIDELINES",
+    }
+    get_status = Mock(return_value=task_status)
+    monkeypatch.setattr(fastapi_app, "task_manager", Mock(get_status=get_status))
+
+    response = api_client.get("/api/tasks/task-123?from_index=1")
+
+    assert response.status_code == 200
+    assert response.json() == task_status
+    get_status.assert_called_once_with("task-123", from_index=1)
+
+
+def test_api_task_status_alias_unknown_task_returns_404(monkeypatch, api_client):
+    monkeypatch.setattr(
+        fastapi_app,
+        "task_manager",
+        Mock(get_status=Mock(return_value=None)),
+    )
+
+    response = api_client.get("/api/tasks/missing")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
+
+
 def test_task_status_unknown_task_returns_404(monkeypatch, api_client):
     monkeypatch.setattr(
         fastapi_app,
@@ -376,6 +528,30 @@ def test_task_cancel_returns_cancelled_payload(monkeypatch, api_client):
     assert response.status_code == 200
     assert response.json() == {"task_id": "task-123", "status": "cancelled"}
     cancel_task.assert_called_once_with("task-123")
+
+
+def test_api_task_cancel_alias_returns_cancelled_payload(monkeypatch, api_client):
+    cancel_task = Mock(return_value=True)
+    monkeypatch.setattr(fastapi_app, "task_manager", Mock(cancel_task=cancel_task))
+
+    response = api_client.post("/api/tasks/task-123/cancel")
+
+    assert response.status_code == 200
+    assert response.json() == {"task_id": "task-123", "status": "cancelled"}
+    cancel_task.assert_called_once_with("task-123")
+
+
+def test_api_task_cancel_alias_unknown_task_returns_404(monkeypatch, api_client):
+    monkeypatch.setattr(
+        fastapi_app,
+        "task_manager",
+        Mock(cancel_task=Mock(return_value=False)),
+    )
+
+    response = api_client.post("/api/tasks/missing/cancel")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Task not found"}
 
 
 def test_task_cancel_unknown_task_returns_404(monkeypatch, api_client):

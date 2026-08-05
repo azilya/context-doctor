@@ -1,48 +1,43 @@
 # TODOs
 
-## Testing plan
+All implementation-strategy phases are complete. Follow-up work should be driven by
+new product requirements rather than the retired phase checklist below.
 
-- Build shared fixtures and LLM mocks for schema JSON, rules text, SQL dialects, questions, generated rules, and representative parsed responses.
-- Add unit tests for flow foundations: schema normalization, rule splitting, prompt input construction, result formatting, task-state transitions, cancellation checks, and non-critical history failures.
-- Add API tests for `/`, `/history`, `POST /run`, `GET /tasks/{task_id}`, and `POST /tasks/{task_id}/cancel`.
-- Add functional tests for `rule_analysis`, `question_analysis`, `rule_generation`, and `all_rules_analysis` workflows.
-- Document local test setup, recommended test commands, and the manual checklist in `TEST_PLAN.md`.
+## Testing plan (Completed)
 
-## Context caching
+- Python unit and functional suites cover ingestion, persistence, immutable snapshots,
+  route contracts, task lifecycles, history isolation, workflows, and the dialect tool.
+- Lightweight Node tests cover extracted browser-independent helpers.
+- Live LLM traffic remains prohibited in automated tests.
 
-- Rename/refactor `ContextStore` into `ContextService` in `context_doctor/services/context_service.py`.
-- Update all `context_store` imports/usages to the new service boundary.
-- Keep `AnalysisContext` colocated with `ContextService`; move it later only if it becomes independently shared.
-- Add `ContextRepository` or a storage object when persistence is introduced.
-- Keep `ContextService` responsible for ingestion, validation, normalization, and persistence orchestration.
-- Surface context ingestion and validation failures as critical path errors.
-- Generate and return a `context_id` after context upload.
-- Store raw schema JSON, normalized schema description, rules text, SQL dialect, source filenames, creation time, and last-used time.
-- Persist `context_id` in history for run-to-context traceability.
-- Add explicit create-vs-replace semantics for uploaded schema/rules updates.
-- Add deletion or expiry to bound cached-context storage growth.
-- Add UI controls for uploading a new context or reusing a cached context.
-- Use immutable `AnalysisContext` snapshots for async tasks so updates do not affect in-flight runs.
+## API and flow refactor (Completed)
 
-## Frontend JavaScript extraction
+- Routers and `/api` compatibility paths are in place; legacy browser routes remain.
+- Analysis flows live in `context_doctor.flows` and empty responses propagate visibly.
+- Single-rule analysis has an opt-in task-manager endpoint at
+  `POST /api/tasks/rule-analysis`; the legacy `/run` browser contract remains sync.
 
-- Create `context_doctor/static/index.js` as the package static JS entrypoint.
-- Serve package static assets through FastAPI and load the entrypoint from Jinja.
-- Move inline JavaScript into small modules/functions.
-- Keep templates focused on markup, Jinja-provided data, and data attributes.
-- Preserve existing flows and endpoints during extraction: `/run`, `/tasks/{task_id}`, cancellation, synchronous results, polling, and partial results.
-- Factor testable DOM, state, and helper functions for flow selection, loading/polling state, cancellation, partial-results rendering, paging/goto logic, and rendering helpers.
-- Add one lightweight JS unit test setup, such as Vitest/jsdom or equivalent.
-- Avoid visual redesign; keep extraction behavior-preserving.
+## Context caching (Completed)
 
-## Tools (give more thought)
+- `ContextService` owns validation, normalization, persistence orchestration, explicit
+  create/replace, retrieval/touch, deletion, and expiry.
+- Cached records include raw and normalized schema, rules, dialect, filenames, identity,
+  creation time, and last-used time. History input metadata includes `context_id`.
+- Background tasks receive deep immutable snapshots. The UI supports cached identity
+  reuse, and `/api/contexts` provides create/replace/get/delete lifecycle endpoints.
 
-- Move away from prompt-based workflows to actual agentic
-- Tools to add:
-  - Check that SQL dialect documentation is valid and current.
+## Frontend JavaScript extraction (Completed)
 
-## API and flow refactor
+- Package static assets are served by FastAPI; templates contain markup, configuration,
+  and data attributes rather than behavior handlers.
+- Flow selection, copy/clear, loading, polling, cancellation, partial rendering, and
+  paging behavior live in `static/index.js`; pure helpers and Node tests are included.
+- The extraction intentionally preserves the visual design and legacy endpoints.
 
-- Split OpenAPI/API endpoints into routers.
-- Move API routes under `/api` endpoints.
-- Move analysis flows into a dedicated flows folder.
+## Agentic tooling decision (Completed)
+
+- The chosen scope is explicit, auditable tools rather than an unconstrained autonomous
+  prompt loop. `GET /api/tools/sql-dialect-docs` checks registered official, current
+  documentation URLs and returns structured results for future agent orchestration.
+- Documentation checks are user-invoked and are never run implicitly during analysis,
+  keeping automated tests deterministic and avoiding surprise external traffic.

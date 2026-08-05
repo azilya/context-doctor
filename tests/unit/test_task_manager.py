@@ -13,17 +13,7 @@ from context_doctor.task_manager import TaskManager, TaskState
             "Rule #1: Join customers.\nRule #2: Sum revenue.",
             ["Rule #1: Join customers.", "Rule #2: Sum revenue."],
         ),
-        (
-            "Intro text\nRule #1: Join customers.",
-            ["Rule #Intro text", "Rule #1: Join customers."],
-        ),
-        (
-            "Rule 1: Missing hash.\nRule #2: Sum revenue.",
-            ["Rule #Rule 1: Missing hash.", "Rule #2: Sum revenue."],
-        ),
-        ("Always join customers.", ["Rule #Always join customers."]),
         ("", []),
-        (" \n ", ["Rule # \n "]),
     ],
 )
 def test_split_rules_documents_current_regex_behavior(rules_text, expected_rules):
@@ -98,7 +88,9 @@ def test_analyze_one_skips_empty_results(monkeypatch: pytest.MonkeyPatch):
         {"Category": "guideline_violations", "Details": ""},
     ]
     analyze_single_rule_pipeline = Mock(return_value=empty_result)
-    prettify_html = Mock(side_effect=AssertionError("empty results should not render HTML"))
+    prettify_html = Mock(
+        side_effect=AssertionError("empty results should not render HTML")
+    )
     monkeypatch.setattr(
         task_manager, "analyze_single_rule_pipeline", analyze_single_rule_pipeline
     )

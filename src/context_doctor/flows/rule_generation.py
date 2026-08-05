@@ -2,13 +2,13 @@ import logging
 
 from pydantic import BaseModel, Field
 
-from .question_analysis_flow import (
+from .question_analysis import (
     filter_relevant_rules_and_descriptions,
 )
-from .llm_client import parse_response
-from .package_resources import read_prompt_steps, render_prompt_messages
-from .rule_analysis_flow import analyze_rule_pipeline, guidelines
-from .utils import details_by_category, ordered_rows
+from ..llm_client import parse_response
+from ..package_resources import read_prompt_steps, render_prompt_messages
+from ..utils import details_by_category, ordered_rows
+from .rule_analysis import analyze_rule_pipeline, guidelines
 
 
 class RuleSuggestion(BaseModel):
